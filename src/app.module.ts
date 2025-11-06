@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
@@ -15,50 +17,38 @@ import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { RolePermissionsModule } from './role-permissions/role-permissions.module';
 import { MediaModule } from './media/media.module';
+import { envValidationSchema } from './config/env.validation';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { getDatabaseConfig } from './config/database.config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: envValidationSchema,
+      validationOptions: {
+        allowUnknown: true,
+        abortEarly: false,
+      },
+    }),
     TypeOrmModule.forRootAsync({
       useFactory: () => {
-        // Parse DATABASE_URL if provided, otherwise use individual variables
-        let dbConfig: any;
-
-        if (process.env.DATABASE_URL) {
-          // Parse PostgreSQL URL: postgresql://user:password@host:port/database
-          const url = new URL(process.env.DATABASE_URL);
-          dbConfig = {
-            type: 'postgres',
-            host: url.hostname,
-            port: parseInt(url.port || '5432'),
-            username: url.username,
-            password: url.password || '',
-            database: url.pathname.slice(1), // Remove leading /
-          };
-        } else if (process.env.DB_TYPE === 'postgres') {
-          dbConfig = {
-            type: 'postgres',
-            host: process.env.DB_HOST || 'localhost',
-            port: parseInt(process.env.DB_PORT || '5432'),
-            username: process.env.DB_USERNAME || 'postgres',
-            password: process.env.DB_PASSWORD || '',
-            database: process.env.DB_NAME || 'sibubur',
-          };
-        } else {
-          dbConfig = {
-            type: 'sqlite',
-            database: process.env.DB_PATH || 'sibubur.db',
-          };
-        }
-
+        const config = getDatabaseConfig();
         return {
-          ...dbConfig,
-          entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: process.env.NODE_ENV !== 'production', // Auto-sync schema in dev (disable in prod)
-          logging: process.env.NODE_ENV === 'development',
+          ...config,
+          // synchronize should always be false in production
+          // Use migrations instead
+          synchronize: false,
         };
       },
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: parseInt(process.env.THROTTLE_TTL || '60') * 1000, // Convert to milliseconds
+        limit: parseInt(process.env.THROTTLE_LIMIT || '100'),
+      },
+    ]),
     AuthModule,
     RolesModule,
     PermissionsModule,
@@ -73,6 +63,20 @@ import { MediaModule } from './media/media.module';
     WeatherModule,
     ReportsModule,
     MediaModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
   ],
 })
 export class AppModule {}

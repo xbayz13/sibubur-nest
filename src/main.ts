@@ -1,23 +1,39 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable CORS for POS frontend interactions
-  app.enableCors();
+  const corsOptions = {
+    origin: process.env.CORS_ORIGIN || '*',
+    credentials: true,
+  };
+  app.enableCors(corsOptions);
 
   // Serve static files from uploads directory
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
 
-  // Global validation pipe
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  // Global validation pipe with better error messages
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true, // Strip properties that don't have decorators
+      forbidNonWhitelisted: true, // Throw error if non-whitelisted properties are present
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
+
+  const port = process.env.PORT || 3000;
 
   // Swagger setup for API docs
   const config = new DocumentBuilder()
@@ -49,6 +65,13 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document); // Accessible at /api
 
-  await app.listen(3000);
+  // Only enable Swagger in non-production environments
+  if (process.env.NODE_ENV !== 'production') {
+    logger.log(`Swagger documentation available at http://localhost:${port}/api`);
+  }
+
+  await app.listen(port);
+  logger.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 }
 bootstrap();
