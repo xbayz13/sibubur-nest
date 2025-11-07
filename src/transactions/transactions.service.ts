@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Transaction, TransactionStatus } from '../entities/transaction.entity';
 import { Order, OrderStatus } from '../entities/order.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -60,10 +60,21 @@ export class TransactionsService {
     return await this.findOne(savedTransaction.id);
   }
 
-  async findAll(storeId?: number): Promise<Transaction[]> {
+  async findAll(storeId?: number, date?: string): Promise<Transaction[]> {
     const where: any = {};
     if (storeId) {
       where.storeId = storeId;
+    }
+
+    // Add date filtering
+    if (date) {
+      // Parse date string (YYYY-MM-DD) and create date range
+      // Use UTC to avoid timezone issues
+      const dateStr = date.trim();
+      const start = new Date(dateStr + 'T00:00:00.000Z');
+      const end = new Date(dateStr + 'T23:59:59.999Z');
+      
+      where.createdAt = Between(start, end);
     }
 
     return await this.transactionRepository.find({

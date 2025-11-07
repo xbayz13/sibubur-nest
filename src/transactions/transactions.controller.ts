@@ -7,6 +7,8 @@ import {
   Query,
   UseGuards,
   Request,
+  BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
@@ -18,18 +20,67 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class TransactionsController {
+  private readonly logger = new Logger(TransactionsController.name);
+
   constructor(private readonly transactionsService: TransactionsService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new transaction' })
-  create(@Body() createTransactionDto: CreateTransactionDto, @Request() req) {
-    return this.transactionsService.create(createTransactionDto, req.user.sub);
+  async create(@Body() createTransactionDto: CreateTransactionDto, @Request() req: any) {
+    this.logger.log(`[TransactionsController] Request received`);
+    this.logger.log(`[TransactionsController] req.user: ${JSON.stringify(req.user)}`);
+    
+    if (!req.user) {
+      this.logger.error('[TransactionsController] req.user is undefined');
+      throw new BadRequestException('User authentication required. Please login again.');
+    }
+
+    // Extract user ID - should be set by JWT Guard
+    let userId: number | undefined = undefined;
+    
+    // Try multiple ways to get the user ID (in order of preference)
+    if (req.user?.id) {
+      userId = typeof req.user.id === 'string' ? parseInt(req.user.id, 10) : Number(req.user.id);
+    } else if (req.user?.sub) {
+      userId = typeof req.user.sub === 'string' ? parseInt(req.user.sub, 10) : Number(req.user.sub);
+    } else if ((req.user as any)?.userId) {
+      userId = typeof (req.user as any).userId === 'string' 
+        ? parseInt((req.user as any).userId, 10) 
+        : Number((req.user as any).userId);
+    }
+    
+    this.logger.log(`[TransactionsController] Extracted userId: ${userId}`);
+    
+    // Validate userId
+    if (userId === undefined || userId === null || isNaN(userId) || userId <= 0) {
+      this.logger.error(`[TransactionsController] Invalid user ID. req.user: ${JSON.stringify(req.user)}`);
+      throw new BadRequestException(`Invalid user ID: ${userId}. User authentication required.`);
+    }
+    
+    // Ensure it's a number
+    const numericUserId = Number(userId);
+    this.logger.log(`[TransactionsController] Processing transaction with userId: ${numericUserId}`);
+    
+    try {
+      const result = await this.transactionsService.create(createTransactionDto, numericUserId);
+      this.logger.log(`[TransactionsController] Transaction created successfully: ${result.id}`);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`[TransactionsController] Error creating transaction: ${error.message}`);
+      throw error;
+    }
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all transactions' })
-  findAll(@Query('storeId') storeId?: string) {
-    return this.transactionsService.findAll(storeId ? +storeId : undefined);
+  findAll(
+    @Query('storeId') storeId?: string,
+    @Query('date') date?: string,
+  ) {
+    return this.transactionsService.findAll(
+      storeId ? +storeId : undefined,
+      date,
+    );
   }
 
   @Get(':id')

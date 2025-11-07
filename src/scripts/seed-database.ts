@@ -112,6 +112,7 @@ async function seedDatabase() {
     console.log('📋 Step 1: Creating Roles and Permissions...');
     
     const roles = [
+      { name: 'SuperAdmin' }, // SuperAdmin role - bypasses all authorization
       { name: 'Owner' },
       { name: 'Manager' },
       { name: 'Cashier' },
@@ -162,7 +163,10 @@ async function seedDatabase() {
     // ============================================
     console.log('👥 Step 2: Creating Users...');
     
+    const superAdminRole = savedRoles.find(r => r.name === 'SuperAdmin')!;
+    
     const users = [
+      { username: 'superadmin', password: 'superadmin123', name: 'Super Administrator', roleId: superAdminRole.id },
       { username: 'owner', password: 'owner123', name: 'Budi Santoso', roleId: ownerRole.id },
       { username: 'manager1', password: 'manager123', name: 'Siti Nurhaliza', roleId: savedRoles.find(r => r.name === 'Manager')!.id },
       { username: 'cashier1', password: 'cashier123', name: 'Ahmad Fauzi', roleId: savedRoles.find(r => r.name === 'Cashier')!.id },
@@ -629,10 +633,12 @@ async function seedDatabase() {
     console.log(`  • Expenses: ${expenses.length}`);
     console.log(`  • Attendances: ${savedEmployees.length}`);
     console.log('\n🔑 Test Credentials:');
+    console.log('  • SuperAdmin: username=superadmin, password=superadmin123 (BYPASSES ALL AUTHORIZATION)');
     console.log('  • Owner: username=owner, password=owner123');
     console.log('  • Manager: username=manager1, password=manager123');
     console.log('  • Cashier: username=cashier1, password=cashier123');
     console.log('\n🚀 You can now start the application and test the full flow!');
+    console.log('⚠️  SuperAdmin account bypasses all permission checks!');
     console.log('='.repeat(60));
 
     await dataSource.destroy();

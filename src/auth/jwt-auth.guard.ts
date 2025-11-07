@@ -1,5 +1,99 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Observable } from 'rxjs';
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {}
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  private readonly logger = new Logger(JwtAuthGuard.name);
+
+  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+    // Check if Authorization header is present
+    const request = context.switchToHttp().getRequest();
+    const authHeader = request.headers.authorization;
+    
+    if (!authHeader) {
+      this.logger.warn('No Authorization header found');
+      throw new UnauthorizedException('Authorization header is required. Format: Bearer <token>');
+    }
+
+    if (!authHeader.startsWith('Bearer ')) {
+      this.logger.warn('Invalid Authorization header format');
+      throw new UnauthorizedException('Authorization header must start with "Bearer "');
+    }
+
+    // Try to authenticate
+    return super.canActivate(context);
+  }
+
+  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
+    // Check if there's an error or no user (token validation failed)
+    if (err || !user) {
+      // Check if token is missing or invalid
+      if (info) {
+        this.logger.error(`JWT validation failed: ${info.name} - ${info.message}`);
+        
+        if (info.name === 'JsonWebTokenError') {
+          throw new UnauthorizedException(`Invalid token: ${info.message}`);
+        }
+        if (info.name === 'TokenExpiredError') {
+          throw new UnauthorizedException('Token has expired. Please login again.');
+        }
+        if (info.name === 'NotBeforeError') {
+          throw new UnauthorizedException('Token not active yet.');
+        }
+      }
+      
+      throw err || new UnauthorizedException('Authentication failed. Please check your token.');
+    }
+
+    // Log user info for debugging
+    this.logger.log(`[JWT Guard] User received from strategy: ${JSON.stringify(user)}`);
+
+    // Ensure user object has id property - try multiple sources
+    if (!user.id) {
+      if (user.sub) {
+        this.logger.warn(`[JWT Guard] User object has 'sub' instead of 'id', converting...`);
+        user.id = typeof user.sub === 'string' ? parseInt(user.sub, 10) : Number(user.sub);
+      } else if ((user as any).userId) {
+        this.logger.warn(`[JWT Guard] User object has 'userId' instead of 'id', converting...`);
+        user.id = typeof (user as any).userId === 'string' 
+          ? parseInt((user as any).userId, 10) 
+          : Number((user as any).userId);
+      }
+    }
+
+    // Validate that user.id is now set and is a valid number
+    if (!user.id || isNaN(user.id) || user.id <= 0) {
+      this.logger.error(`[JWT Guard] Invalid user ID after conversion. User object: ${JSON.stringify(user)}`);
+      throw new UnauthorizedException('Invalid user authentication. Please login again.');
+    }
+
+    // Ensure id is a number
+    user.id = Number(user.id);
+
+    // Log final user object
+    this.logger.log(`[JWT Guard] Final user object: ${JSON.stringify(user)}`);
+    this.logger.log(`[JWT Guard] User ID: ${user.id} (type: ${typeof user.id}), Username: ${user.username}, Role: ${user.roleName || 'N/A'}`);
+
+    // Get request object and explicitly set user
+    const request = context.switchToHttp().getRequest();
+    
+    // Create a clean user object with guaranteed id property
+    const cleanUser = {
+      id: user.id,
+      username: user.username,
+      roleId: user.roleId,
+      roleName: user.roleName,
+    };
+
+    // Set user on request - this is what controllers will access
+    request.user = cleanUser;
+    
+    this.logger.log(`[JWT Guard] Set req.user: ${JSON.stringify(request.user)}`);
+    this.logger.log(`[JWT Guard] Verified req.user.id: ${request.user.id} (type: ${typeof request.user.id})`);
+
+    // Return the clean user object - Passport will also set this on req.user
+    // But we've already set it explicitly above to ensure it's there
+    return cleanUser as any;
+  }
+}

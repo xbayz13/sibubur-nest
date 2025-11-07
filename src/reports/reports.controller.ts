@@ -47,5 +47,19 @@ export class ReportsController {
   ) {
     return this.reportsService.getYearlyReport(+year, storeId ? +storeId : undefined);
   }
+
+  @Get('recommendations/:date')
+  @ApiOperation({ summary: 'Get production recommendations for a specific date' })
+  getProductionRecommendations(
+    @Param('date') date: string,
+    @Query('storeId') storeId?: string,
+    @Query('lookbackDays') lookbackDays?: string,
+  ) {
+    return this.reportsService.getProductionRecommendations(
+      date,
+      storeId ? +storeId : undefined,
+      lookbackDays ? +lookbackDays : 30,
+    );
+  }
 }
 

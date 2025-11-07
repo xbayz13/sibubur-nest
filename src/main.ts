@@ -42,6 +42,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('auth')
+    .addTag('users')
     .addTag('roles')
     .addTag('permissions')
     .addTag('role-permissions')

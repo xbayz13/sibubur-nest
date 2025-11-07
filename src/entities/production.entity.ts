@@ -35,6 +35,9 @@ export class Production {
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
+  @Column({ name: 'porridge_amount', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  porridgeAmount: number;
+
   @Column({ name: 'author_id' })
   authorId: number;
 

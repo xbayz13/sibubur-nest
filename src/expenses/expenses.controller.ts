@@ -30,8 +30,14 @@ export class ExpensesController {
 
   @Get()
   @ApiOperation({ summary: 'Get all expenses' })
-  findAll(@Query('storeId') storeId?: string) {
-    return this.expensesService.findAll(storeId ? +storeId : undefined);
+  findAll(
+    @Query('storeId') storeId?: string,
+    @Query('date') date?: string,
+  ) {
+    return this.expensesService.findAll(
+      storeId ? +storeId : undefined,
+      date,
+    );
   }
 
   @Get(':id')

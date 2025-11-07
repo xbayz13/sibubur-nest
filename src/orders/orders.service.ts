@@ -2,9 +2,10 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, Between } from 'typeorm';
 import { Order, OrderStatus } from '../entities/order.entity';
 import { OrderItem } from '../entities/order-item.entity';
 import { OrderItemAddon } from '../entities/order-item-addon.entity';
@@ -14,6 +15,8 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
@@ -34,6 +37,11 @@ export class OrdersService {
   }
 
   async create(createOrderDto: CreateOrderDto, userId: number): Promise<Order> {
+    // Validate userId
+    if (!userId || userId === null || userId === undefined || isNaN(userId) || userId <= 0) {
+      throw new BadRequestException(`Invalid user ID: ${userId}. User authentication required.`);
+    }
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -69,6 +77,11 @@ export class OrdersService {
       const taxAmount = subtotalAmount * 0.1; // 10% tax
       const totalAmount = subtotalAmount + taxAmount;
 
+      // Double-check userId before creating order
+      if (!userId || userId === null || userId === undefined || isNaN(userId) || userId <= 0) {
+        throw new BadRequestException(`Invalid user ID: ${userId}. Cannot create order without valid user.`);
+      }
+
       const order = queryRunner.manager.create(Order, {
         orderNumber,
         customerName: createOrderDto.customerName,
@@ -77,7 +90,7 @@ export class OrdersService {
         taxAmount,
         totalAmount,
         storeId: createOrderDto.storeId,
-        userId,
+        userId: Number(userId), // Ensure it's a number
       });
 
       const savedOrder = await queryRunner.manager.save(order);
@@ -135,17 +148,39 @@ export class OrdersService {
     }
   }
 
-  async findAll(storeId?: number): Promise<Order[]> {
+  async findAll(storeId?: number, date?: string): Promise<Order[]> {
     const where: any = {};
     if (storeId) {
       where.storeId = storeId;
     }
 
-    return await this.orderRepository.find({
+    // Add date filtering
+    if (date) {
+      // Parse date string (YYYY-MM-DD) and create date range
+      // Use UTC to avoid timezone issues
+      const dateStr = date.trim();
+      const start = new Date(dateStr + 'T00:00:00.000Z');
+      const end = new Date(dateStr + 'T23:59:59.999Z');
+      
+      this.logger.log(`[findAll] Filtering by date: ${dateStr}`);
+      this.logger.log(`[findAll] Start: ${start.toISOString()}, End: ${end.toISOString()}`);
+      
+      where.createdAt = Between(start, end);
+    }
+
+    const orders = await this.orderRepository.find({
       where,
       relations: ['store', 'user', 'orderItems', 'orderItems.product', 'orderItems.orderItemAddons', 'orderItems.orderItemAddons.addon'],
       order: { createdAt: 'DESC' },
     });
+
+    this.logger.log(`[findAll] Found ${orders.length} orders`);
+    if (orders.length > 0 && date) {
+      this.logger.log(`[findAll] First order createdAt: ${orders[0].createdAt}`);
+      this.logger.log(`[findAll] Last order createdAt: ${orders[orders.length - 1].createdAt}`);
+    }
+
+    return orders;
   }
 
   async findOne(id: number): Promise<Order> {

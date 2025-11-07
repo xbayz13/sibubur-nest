@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, Between } from 'typeorm';
 import { Production } from '../entities/production.entity';
 import { ProductionSupply } from '../entities/production-supply.entity';
 import { Supply } from '../entities/supply.entity';
@@ -69,10 +69,15 @@ export class ProductionsService {
     }
   }
 
-  async findAll(storeId?: number): Promise<Production[]> {
+  async findAll(storeId?: number, date?: string): Promise<Production[]> {
     const where: any = {};
     if (storeId) {
       where.storeId = storeId;
+    }
+
+    // Add date filtering (productions use date field, not createdAt)
+    if (date) {
+      where.date = date as any;
     }
 
     return await this.productionRepository.find({

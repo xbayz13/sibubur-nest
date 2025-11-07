@@ -31,8 +31,8 @@ export class AuthService {
         name,
         roleId,
       });
-      await this.userRepository.save(user);
-      return this.login(user);
+      const savedUser = await this.userRepository.save(user);
+      return await this.login(savedUser);
     } catch (error) {
       // Handle duplicate username error
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.code === '23505') {
@@ -43,11 +43,18 @@ export class AuthService {
     }
   }
 
-  login(user: User): { access_token: string } {
+  async login(user: User): Promise<{ access_token: string }> {
+    // Load role to include roleName in JWT payload
+    const userWithRole = await this.userRepository.findOne({
+      where: { id: user.id },
+      relations: ['role'],
+    });
+
     const payload = {
       username: user.username,
       sub: user.id,
       roleId: user.roleId,
+      roleName: userWithRole?.role?.name || null,
     };
     return { access_token: this.jwtService.sign(payload) };
   }

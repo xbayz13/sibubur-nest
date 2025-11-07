@@ -51,6 +51,12 @@ export class SuppliesController {
     return this.suppliesService.update(+id, updateSupplyDto);
   }
 
+  @Patch(':id/restock')
+  @ApiOperation({ summary: 'Restock a supply (add quantity to existing stock)' })
+  restock(@Param('id') id: string, @Body() body: { quantity: number }) {
+    return this.suppliesService.restock(+id, body.quantity);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a supply (soft delete)' })
   remove(@Param('id') id: string) {

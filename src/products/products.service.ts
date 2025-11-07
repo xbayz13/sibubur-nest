@@ -28,7 +28,7 @@ export class ProductsService {
   async findAll(): Promise<Product[]> {
     return await this.productRepository.find({
       where: { deletedAt: IsNull() },
-      relations: ['category', 'picture'],
+      relations: ['category', 'picture', 'productAddons', 'productAddons.addon'],
       order: { createdAt: 'DESC' },
     });
   }

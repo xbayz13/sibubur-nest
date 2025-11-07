@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { StoresModule } from './stores/stores.module';
@@ -50,6 +51,7 @@ import { getDatabaseConfig } from './config/database.config';
       },
     ]),
     AuthModule,
+    UsersModule,
     RolesModule,
     PermissionsModule,
     RolePermissionsModule,

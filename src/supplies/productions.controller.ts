@@ -26,13 +26,23 @@ export class ProductionsController {
   @Post()
   @ApiOperation({ summary: 'Create a new production record' })
   create(@Body() createProductionDto: CreateProductionDto, @Request() req) {
-    return this.productionsService.create(createProductionDto, req.user.sub);
+    const userId = req.user?.id || req.user?.sub;
+    if (!userId) {
+      throw new Error('User ID not found in request');
+    }
+    return this.productionsService.create(createProductionDto, typeof userId === 'string' ? parseInt(userId, 10) : userId);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all production records' })
-  findAll(@Query('storeId') storeId?: string) {
-    return this.productionsService.findAll(storeId ? +storeId : undefined);
+  findAll(
+    @Query('storeId') storeId?: string,
+    @Query('date') date?: string,
+  ) {
+    return this.productionsService.findAll(
+      storeId ? +storeId : undefined,
+      date,
+    );
   }
 
   @Get(':id')

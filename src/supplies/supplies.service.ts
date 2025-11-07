@@ -52,5 +52,11 @@ export class SuppliesService {
       .andWhere('supply.deleted_at IS NULL')
       .getMany();
   }
+
+  async restock(id: number, quantity: number): Promise<Supply> {
+    const supply = await this.findOne(id);
+    supply.stock += quantity;
+    return await this.supplyRepository.save(supply);
+  }
 }
 
