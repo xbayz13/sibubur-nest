@@ -1,21 +1,27 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   UseGuards,
   Request,
   UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private usersService: UsersService,
+  ) {}
 
   @Post('signup')
   @ApiOperation({ summary: 'Register a new user' })
@@ -44,12 +50,61 @@ export class AuthController {
       }
 
   @UseGuards(JwtAuthGuard)
-  @Post('profile')
+  @Get('profile')
   @ApiOperation({ summary: 'Get user profile (protected)' })
-  getProfile(
-    @Request() req: { user: { username: string; [key: string]: any } },
-  ): { username: string; [key: string]: any } {
-    const user = req.user;
-    return user; // User from JWT
+  async getProfile(
+    @Request() req: { user: { id: number; username: string; roleId: number; roleName?: string; [key: string]: any } },
+  ) {
+    const userId = req.user.id;
+    
+    try {
+      const user = await this.usersService.findOne(userId);
+      
+      // Extract permissions from role
+      const permissions: string[] = [];
+      
+      // Owner and SuperAdmin have all permissions
+      if (user.role?.name === 'SuperAdmin') {
+        permissions.push('superadmin:*');
+      } else if (user.role?.name === 'Owner') {
+        // Owner has all permissions - return all permission slugs
+        // For now, we'll fetch all permissions and return their slugs
+        // In production, you might want to cache this or handle it differently
+        if (user.role?.rolePermissions && user.role.rolePermissions.length > 0) {
+          // Owner role should have all permissions assigned
+          user.role.rolePermissions.forEach((rp: any) => {
+            if (rp.permission?.slug) {
+              permissions.push(rp.permission.slug);
+            }
+          });
+        }
+      } else {
+        // Regular users get permissions from their role
+        if (user.role?.rolePermissions) {
+          user.role.rolePermissions.forEach((rp: any) => {
+            if (rp.permission?.slug) {
+              permissions.push(rp.permission.slug);
+            }
+          });
+        }
+      }
+
+      return {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        roleId: user.roleId,
+        roleName: user.role?.name || req.user.roleName,
+        storeId: user.storeId,
+        permissions,
+      };
+    } catch (error) {
+      // If user not found, the token is invalid (user was deleted)
+      // Return 401 Unauthorized instead of 404
+      if (error instanceof NotFoundException) {
+        throw new UnauthorizedException('User account no longer exists. Please log in again.');
+      }
+      throw error;
+    }
   }
 }

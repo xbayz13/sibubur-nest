@@ -8,9 +8,11 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Role } from '../entities/role.entity';
+import { Store } from '../entities/store.entity';
 import { Order } from '../entities/order.entity';
 import { Transaction } from '../entities/transaction.entity';
 import { Production } from '../entities/production.entity';
@@ -36,6 +38,13 @@ export class User {
 
   @Column()
   name: string;
+
+  @Column({ name: 'store_id', nullable: true })
+  storeId: number | null;
+
+  @OneToOne(() => Store, { nullable: true })
+  @JoinColumn({ name: 'store_id' })
+  store: Store | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

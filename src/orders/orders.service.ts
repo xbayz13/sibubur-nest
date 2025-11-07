@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, Between } from 'typeorm';
+import { Repository, DataSource, Between, IsNull } from 'typeorm';
 import { Order, OrderStatus } from '../entities/order.entity';
 import { OrderItem } from '../entities/order-item.entity';
 import { OrderItemAddon } from '../entities/order-item-addon.entity';
@@ -55,11 +55,11 @@ export class OrdersService {
       // Calculate totals
       for (const itemDto of createOrderDto.items) {
         const product = await this.productRepository.findOne({
-          where: { id: itemDto.productId },
+          where: { id: itemDto.productId, deletedAt: IsNull() },
         });
 
         if (!product) {
-          throw new NotFoundException(`Product with ID ${itemDto.productId} not found`);
+          throw new NotFoundException(`Product with ID ${itemDto.productId} not found or has been deleted`);
         }
 
         let itemTotal = product.price * itemDto.quantity;

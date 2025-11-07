@@ -20,7 +20,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     username: string;
     roleId: number;
     roleName?: string;
-  }): Promise<User & { roleName?: string }> {
+    storeId?: number | null;
+  }): Promise<User & { roleName?: string; storeId?: number | null }> {
     // Ensure id is always a number
     const userId = typeof payload.sub === 'string' ? parseInt(payload.sub, 10) : Number(payload.sub);
     
@@ -28,12 +29,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new Error(`Invalid user ID in JWT payload: ${payload.sub}`);
     }
 
-    const user: User & { roleName?: string } = {
+    const user: User & { roleName?: string; storeId?: number | null } = {
       id: userId,
       username: payload.username,
       roleId: payload.roleId,
       roleName: payload.roleName,
-    } as User & { roleName?: string };
+      storeId: payload.storeId || null,
+    } as User & { roleName?: string; storeId?: number | null };
 
     // Ensure id property exists and is valid
     if (!user.id || user.id <= 0) {

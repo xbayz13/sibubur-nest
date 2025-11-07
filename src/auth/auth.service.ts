@@ -44,17 +44,18 @@ export class AuthService {
   }
 
   async login(user: User): Promise<{ access_token: string }> {
-    // Load role to include roleName in JWT payload
-    const userWithRole = await this.userRepository.findOne({
+    // Load role and store to include in JWT payload
+    const userWithRelations = await this.userRepository.findOne({
       where: { id: user.id },
-      relations: ['role'],
+      relations: ['role', 'store'],
     });
 
     const payload = {
       username: user.username,
       sub: user.id,
       roleId: user.roleId,
-      roleName: userWithRole?.role?.name || null,
+      roleName: userWithRelations?.role?.name || null,
+      storeId: userWithRelations?.storeId || null,
     };
     return { access_token: this.jwtService.sign(payload) };
   }
@@ -62,7 +63,7 @@ export class AuthService {
   async validateUser(username: string, password: string): Promise<User | null> {
     const user = await this.userRepository.findOne({
       where: { username },
-      relations: ['role'],
+      relations: ['role', 'store'],
     });
     if (user && (await bcrypt.compare(password, user.passwordHash))) {
       return user;

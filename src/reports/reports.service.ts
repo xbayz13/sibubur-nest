@@ -142,7 +142,8 @@ export class ReportsService {
   }
 
   async getMonthlyReport(year: number, month: number, storeId?: number) {
-    const startDate = new Date(year, month - 1, 1);
+    // Create date range - use local time for start, end of month for end
+    const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0);
     const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
     const where: any = {
@@ -173,13 +174,70 @@ export class ReportsService {
     // Get orders
     const orders = await this.orderRepository.find({ where });
 
-    // Get productions
+    // Get productions - use date string comparison
+    const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
+    
     const productions = await this.productionRepository.find({
       where: {
-        date: Between(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]) as any,
+        date: Between(startDateStr, endDateStr) as any,
         ...(storeId && { storeId }),
       },
     });
+
+    // Calculate daily statistics
+    const dailyRevenueMap = new Map<string, number>();
+    const dailyExpensesMap = new Map<string, number>();
+    const daysWithActivitySet = new Set<string>();
+
+    // Group transactions by day
+    transactions.forEach((txn) => {
+      const txnDate = new Date(txn.createdAt);
+      const day = `${txnDate.getFullYear()}-${String(txnDate.getMonth() + 1).padStart(2, '0')}-${String(txnDate.getDate()).padStart(2, '0')}`;
+      const current = dailyRevenueMap.get(day) || 0;
+      dailyRevenueMap.set(day, current + Number(txn.amount));
+      daysWithActivitySet.add(day);
+    });
+
+    // Group expenses by day
+    expenses.forEach((exp) => {
+      const expDate = new Date(exp.createdAt);
+      const day = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}-${String(expDate.getDate()).padStart(2, '0')}`;
+      const current = dailyExpensesMap.get(day) || 0;
+      dailyExpensesMap.set(day, current + Number(exp.totalAmount));
+      daysWithActivitySet.add(day);
+    });
+
+    // Group orders by day
+    orders.forEach((order) => {
+      const orderDate = new Date(order.createdAt);
+      const day = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}-${String(orderDate.getDate()).padStart(2, '0')}`;
+      daysWithActivitySet.add(day);
+    });
+
+    // Group productions by day (production.date is a string in YYYY-MM-DD format)
+    productions.forEach((production) => {
+      if (production.date) {
+        // Ensure production date is within the month range
+        const dateStr = typeof production.date === 'string' ? production.date : production.date.toString();
+        const prodDate = new Date(dateStr);
+        if (prodDate.getFullYear() === year && prodDate.getMonth() + 1 === month) {
+          daysWithActivitySet.add(dateStr);
+        }
+      }
+    });
+
+    // Calculate days with data (days that have ANY activity)
+    const daysWithData = daysWithActivitySet.size;
+
+    // Calculate averages - divide by days with data, or by total days in month if no data
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const averageDailyRevenue = daysWithData > 0 
+      ? totalRevenue / daysWithData 
+      : (daysInMonth > 0 && totalRevenue > 0 ? totalRevenue / daysInMonth : 0);
+    const averageDailyExpenses = daysWithData > 0 
+      ? totalExpenses / daysWithData 
+      : (daysInMonth > 0 && totalExpenses > 0 ? totalExpenses / daysInMonth : 0);
 
     return {
       year,
@@ -199,11 +257,15 @@ export class ReportsService {
         total: productions.length,
       },
       netProfit: totalRevenue - totalExpenses,
+      averageDailyRevenue,
+      averageDailyExpenses,
+      daysWithData,
     };
   }
 
   async getYearlyReport(year: number, storeId?: number) {
-    const startDate = new Date(year, 0, 1);
+    // Create date range - use local time
+    const startDate = new Date(year, 0, 1, 0, 0, 0, 0);
     const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
 
     const where: any = {
@@ -234,6 +296,47 @@ export class ReportsService {
     // Get orders
     const orders = await this.orderRepository.find({ where });
 
+    // Calculate monthly statistics
+    const monthlyRevenueMap = new Map<number, number>();
+    const monthlyExpensesMap = new Map<number, number>();
+    const monthsWithActivitySet = new Set<number>();
+
+    // Group transactions by month (0-11)
+    transactions.forEach((txn) => {
+      const txnDate = new Date(txn.createdAt);
+      const month = txnDate.getMonth();
+      const current = monthlyRevenueMap.get(month) || 0;
+      monthlyRevenueMap.set(month, current + Number(txn.amount));
+      monthsWithActivitySet.add(month);
+    });
+
+    // Group expenses by month
+    expenses.forEach((exp) => {
+      const expDate = new Date(exp.createdAt);
+      const month = expDate.getMonth();
+      const current = monthlyExpensesMap.get(month) || 0;
+      monthlyExpensesMap.set(month, current + Number(exp.totalAmount));
+      monthsWithActivitySet.add(month);
+    });
+
+    // Group orders by month
+    orders.forEach((order) => {
+      const orderDate = new Date(order.createdAt);
+      const month = orderDate.getMonth();
+      monthsWithActivitySet.add(month);
+    });
+
+    // Calculate months with data (months that have ANY activity)
+    const monthsWithData = monthsWithActivitySet.size;
+
+    // Calculate averages - divide by months with data, or by 12 if no data
+    const averageMonthlyRevenue = monthsWithData > 0 
+      ? totalRevenue / monthsWithData 
+      : (totalRevenue > 0 ? totalRevenue / 12 : 0);
+    const averageMonthlyExpenses = monthsWithData > 0 
+      ? totalExpenses / monthsWithData 
+      : (totalExpenses > 0 ? totalExpenses / 12 : 0);
+
     return {
       year,
       revenue: {
@@ -248,6 +351,9 @@ export class ReportsService {
         total: orders.length,
       },
       netProfit: totalRevenue - totalExpenses,
+      averageMonthlyRevenue,
+      averageMonthlyExpenses,
+      monthsWithData,
     };
   }
 

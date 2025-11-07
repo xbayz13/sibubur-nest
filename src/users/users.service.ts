@@ -25,6 +25,7 @@ export class UsersService {
         name: createUserDto.name,
         passwordHash: hashedPassword,
         roleId: createUserDto.roleId,
+        storeId: createUserDto.storeId || null,
       });
       return await this.userRepository.save(user);
     } catch (error) {
@@ -62,6 +63,11 @@ export class UsersService {
     if (updateUserDto.password) {
       updateData.passwordHash = await bcrypt.hash(updateUserDto.password, 10);
       delete updateData.password;
+    }
+
+    // Handle storeId update
+    if (updateUserDto.storeId !== undefined) {
+      updateData.storeId = updateUserDto.storeId || null;
     }
 
     Object.assign(user, updateData);

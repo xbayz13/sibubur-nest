@@ -5,6 +5,7 @@ import { Permission } from '../entities/permission.entity';
 import { RolePermission } from '../entities/role-permission.entity';
 import { User } from '../users/user.entity';
 import { Store } from '../entities/store.entity';
+import { ALL_PERMISSIONS, ROLE_PERMISSIONS } from './permissions-mapping';
 import { ProductCategory } from '../entities/product-category.entity';
 import { Product } from '../entities/product.entity';
 import { ProductAddon } from '../entities/product-addon.entity';
@@ -127,36 +128,42 @@ async function seedDatabase() {
       console.log(`  ✓ Created role: ${saved.name}`);
     }
 
-    const permissions = [
-      { module: 'products', action: 'create', slug: 'products.create' },
-      { module: 'products', action: 'read', slug: 'products.read' },
-      { module: 'products', action: 'update', slug: 'products.update' },
-      { module: 'products', action: 'delete', slug: 'products.delete' },
-      { module: 'orders', action: 'create', slug: 'orders.create' },
-      { module: 'orders', action: 'read', slug: 'orders.read' },
-      { module: 'orders', action: 'update', slug: 'orders.update' },
-      { module: 'transactions', action: 'create', slug: 'transactions.create' },
-      { module: 'transactions', action: 'read', slug: 'transactions.read' },
-      { module: 'reports', action: 'read', slug: 'reports.read' },
-    ];
-
+    // Create all permissions
     const savedPermissions: Permission[] = [];
-    for (const permData of permissions) {
+    const permissionMap = new Map<string, Permission>(); // Map slug to permission for easy lookup
+
+    for (const permData of ALL_PERMISSIONS) {
       const permission = dataSource.getRepository(Permission).create(permData);
       const saved = await dataSource.getRepository(Permission).save(permission);
       savedPermissions.push(saved);
+      permissionMap.set(saved.slug, saved);
+      console.log(`  ✓ Created permission: ${saved.slug}`);
     }
+    console.log(`\n  ✓ Created ${savedPermissions.length} permissions total\n`);
 
-    // Assign all permissions to Owner role
-    const ownerRole = savedRoles.find(r => r.name === 'Owner')!;
-    for (const permission of savedPermissions) {
-      const rolePermission = dataSource.getRepository(RolePermission).create({
-        roleId: ownerRole.id,
-        permissionId: permission.id,
-      });
-      await dataSource.getRepository(RolePermission).save(rolePermission);
+    // Assign permissions to roles
+    for (const [roleName, permissionSlugs] of Object.entries(ROLE_PERMISSIONS)) {
+      const role = savedRoles.find(r => r.name === roleName);
+      if (!role) {
+        console.log(`  ⚠️  Role ${roleName} not found, skipping permission assignment`);
+        continue;
+      }
+
+      let assignedCount = 0;
+      for (const slug of permissionSlugs) {
+        const permission = permissionMap.get(slug);
+        if (permission) {
+          const rolePermission = dataSource.getRepository(RolePermission).create({
+            roleId: role.id,
+            permissionId: permission.id,
+          });
+          await dataSource.getRepository(RolePermission).save(rolePermission);
+          assignedCount++;
+        }
+      }
+      console.log(`  ✓ Assigned ${assignedCount} permissions to ${roleName} role`);
     }
-    console.log(`  ✓ Assigned ${savedPermissions.length} permissions to Owner role\n`);
+    console.log('');
 
     // ============================================
     // STEP 2: Create Users
@@ -164,12 +171,15 @@ async function seedDatabase() {
     console.log('👥 Step 2: Creating Users...');
     
     const superAdminRole = savedRoles.find(r => r.name === 'SuperAdmin')!;
+    const ownerRole = savedRoles.find(r => r.name === 'Owner')!;
+    const managerRole = savedRoles.find(r => r.name === 'Manager')!;
+    const cashierRole = savedRoles.find(r => r.name === 'Cashier')!;
     
+    // Create users
     const users = [
-      { username: 'superadmin', password: 'superadmin123', name: 'Super Administrator', roleId: superAdminRole.id },
-      { username: 'owner', password: 'owner123', name: 'Budi Santoso', roleId: ownerRole.id },
-      { username: 'manager1', password: 'manager123', name: 'Siti Nurhaliza', roleId: savedRoles.find(r => r.name === 'Manager')!.id },
-      { username: 'cashier1', password: 'cashier123', name: 'Ahmad Fauzi', roleId: savedRoles.find(r => r.name === 'Cashier')!.id },
+      { username: 'superadmin', password: 'superadmin123', name: 'Super Administrator', roleId: superAdminRole.id, storeId: null },
+      { username: 'owner', password: 'owner123', name: 'Budi Santoso', roleId: ownerRole.id, storeId: null },
+      { username: 'manager1', password: 'manager123', name: 'Siti Nurhaliza', roleId: managerRole.id, storeId: null },
     ];
 
     const savedUsers: User[] = [];
@@ -180,6 +190,7 @@ async function seedDatabase() {
         passwordHash: hashedPassword,
         name: userData.name,
         roleId: userData.roleId,
+        storeId: userData.storeId,
       });
       const saved = await dataSource.getRepository(User).save(user);
       savedUsers.push(saved);
@@ -204,6 +215,26 @@ async function seedDatabase() {
       const saved = await dataSource.getRepository(Store).save(store);
       savedStores.push(saved);
       console.log(`  ✓ Created store: ${saved.name}`);
+    }
+    console.log('');
+
+    // Create cashier users based on stores (1 cashier per store)
+    console.log('👤 Step 3.5: Creating Cashier Users for each Store...');
+    for (const store of savedStores) {
+      const cashierUsername = `cashier_${store.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}`;
+      const cashierName = `Kasir ${store.name}`;
+      const hashedPassword = await bcrypt.hash('cashier123', 10);
+      
+      const cashierUser = dataSource.getRepository(User).create({
+        username: cashierUsername,
+        passwordHash: hashedPassword,
+        name: cashierName,
+        roleId: cashierRole.id,
+        storeId: store.id, // Bind cashier to store
+      });
+      const savedCashier = await dataSource.getRepository(User).save(cashierUser);
+      savedUsers.push(savedCashier);
+      console.log(`  ✓ Created cashier: ${savedCashier.username} (${savedCashier.name}) for store: ${store.name}`);
     }
     console.log('');
 
