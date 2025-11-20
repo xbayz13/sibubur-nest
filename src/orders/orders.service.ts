@@ -74,8 +74,8 @@ export class OrdersService {
         subtotalAmount += itemTotal;
       }
 
-      const taxAmount = subtotalAmount * 0.1; // 10% tax
-      const totalAmount = subtotalAmount + taxAmount;
+      const taxAmount = 0; // No tax
+      const totalAmount = subtotalAmount; // Total equals subtotal
 
       // Double-check userId before creating order
       if (!userId || userId === null || userId === undefined || isNaN(userId) || userId <= 0) {
