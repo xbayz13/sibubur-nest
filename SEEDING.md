@@ -21,7 +21,7 @@ This will create:
 - **5 Products**: Various bubur items with prices
 - **5 Product Addons**: Kerupuk, Kacang, Telur, Ati Ampela, Cakwe
 - **4 Employees**: Assigned to different stores
-- **4 Payment Methods**: Cash, QRIS, Bank Transfer, E-Wallet
+- **2 Payment Methods**: Cash, QRIS
 - **4 Expense Categories**: Bahan Baku, Operasional, Transportasi, Lain-lain
 - **6 Supplies**: Beras, Ayam, Kacang Hijau, Gula, Garam, Minyak
 - **2 Weather Records**: For yesterday and today
@@ -80,7 +80,7 @@ The seed script follows the complete application flow:
 ### Step 4: Customer Payments ✅
 - 3 transactions are created, one for each order
 - Orders are marked as "paid" after transaction creation
-- Different payment methods are used (Cash, QRIS, Bank Transfer)
+- Different payment methods are used (Cash, QRIS)
 
 ### Step 5: Owner Restocks Supplies ✅
 - 3 expense records are created for different categories

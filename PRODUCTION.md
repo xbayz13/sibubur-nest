@@ -200,41 +200,208 @@ export class AuthController {
 
 Before deploying to production:
 
+### Environment & Configuration
 - [ ] Set `NODE_ENV=production`
 - [ ] Disable `synchronize` in database config (already done)
 - [ ] Set strong `JWT_SECRET` (minimum 32 characters)
-- [ ] Configure proper `CORS_ORIGIN`
-- [ ] Set up database migrations
-- [ ] Configure rate limiting appropriately
-- [ ] Set up proper logging (consider using a logging service)
-- [ ] Configure environment variables
-- [ ] Test all migrations on staging
-- [ ] Set up monitoring and alerting
+- [ ] Configure proper `CORS_ORIGIN` (not `*`)
+- [ ] Configure all required environment variables
+- [ ] Test all migrations on staging environment
+
+### Database
+- [ ] Set up PostgreSQL database (not SQLite)
+- [ ] Run database migrations: `npm run migration:run`
+- [ ] Seed master data: `npm run seed:production`
+- [ ] Create admin user: `npm run create-admin`
 - [ ] Configure backup strategy for database
+- [ ] Test database connection
+
+### Security
 - [ ] Review and adjust rate limits
 - [ ] Set up SSL/TLS certificates
-- [ ] Configure reverse proxy (nginx, etc.)
+- [ ] Configure firewall rules
+- [ ] Review and test authentication/authorization
+- [ ] Ensure all passwords are strong (min 12 characters)
+
+### Infrastructure
+- [ ] Set up reverse proxy (nginx, etc.)
 - [ ] Set up process manager (PM2, systemd, etc.)
+- [ ] Configure log rotation
+- [ ] Set up monitoring and alerting
+- [ ] Set up error tracking (Sentry, etc.)
+
+### Testing
+- [ ] Test all API endpoints
+- [ ] Test authentication flow
+- [ ] Test authorization (permissions)
+- [ ] Test database operations
+- [ ] Load testing (if applicable)
+
+### Documentation
+- [ ] Document deployment process
+- [ ] Document environment variables
+- [ ] Document backup/restore procedures
+- [ ] Document troubleshooting steps
 
 ## Security Best Practices
 
 1. **Never commit `.env` files** - Use environment variables or secrets management
 2. **Use strong JWT secrets** - Generate random strings, minimum 32 characters
-3. **Enable HTTPS** - Always use SSL/TLS in production
-4. **Configure CORS properly** - Don't use `*` in production
-5. **Rate limit aggressively** - Especially on auth endpoints
-6. **Monitor logs** - Set up log aggregation and monitoring
-7. **Regular updates** - Keep dependencies updated
-8. **Database backups** - Regular automated backups
-9. **Error monitoring** - Use services like Sentry for error tracking
+3. **Use strong passwords** - Minimum 12 characters for all user accounts
+4. **Never run development seeder in production** - Use `npm run seed:production` instead
+5. **Enable HTTPS** - Always use SSL/TLS in production
+6. **Configure CORS properly** - Don't use `*` in production
+7. **Rate limit aggressively** - Especially on auth endpoints
+8. **Monitor logs** - Set up log aggregation and monitoring
+9. **Regular updates** - Keep dependencies updated
+10. **Database backups** - Regular automated backups
+11. **Error monitoring** - Use services like Sentry for error tracking
+12. **Limit SuperAdmin accounts** - Only create when absolutely necessary
+13. **Change default passwords** - Never use default passwords in production
 
-## Deployment Example
+## 5. Database Seeding for Production
+
+### ⚠️ IMPORTANT: Seeder Safety
+
+The development seeder (`npm run seed`) is **BLOCKED** in production to prevent accidental data loss. It will exit with an error if run in production environment.
+
+### Production Seeder
+
+Use the production seeder to create essential master data only:
+
+```bash
+# This creates roles, permissions, payment methods, and expense categories
+# It does NOT delete existing data
+# It does NOT create users
+npm run seed:production
+```
+
+**What it creates:**
+- ✅ Roles (SuperAdmin, Owner, Manager, Cashier, Kitchen Staff)
+- ✅ Permissions (all 67 permissions)
+- ✅ Role-Permission assignments
+- ✅ Payment Methods (Cash, QRIS)
+- ✅ Expense Categories (Bahan Baku, Operasional, Transportasi, Lain-lain)
+
+**What it does NOT create:**
+- ❌ Users (use `npm run create-admin` instead)
+- ❌ Stores (create via API/admin panel)
+- ❌ Products (create via API/admin panel)
+- ❌ Employees (create via API/admin panel)
+- ❌ Any dummy/test data
+
+### Creating Admin User
+
+After seeding master data, create the first admin user:
+
+```bash
+# Option 1: With environment variable (recommended)
+ADMIN_PASSWORD=your-strong-password-here npm run create-admin
+
+# Option 2: Interactive prompt
+npm run create-admin
+# Will prompt for password (hidden input)
+```
+
+**Requirements:**
+- Password must be at least 12 characters
+- Only one SuperAdmin user can exist
+- If SuperAdmin already exists, script will exit with error
+
+**Environment Variables:**
+- `ADMIN_PASSWORD` - Password for admin user (required, min 12 chars)
+- `ADMIN_USERNAME` - Username (default: 'admin')
+- `ADMIN_NAME` - Display name (default: 'Administrator')
+
+### ⚠️ NEVER Run Development Seeder in Production
+
+```bash
+# ❌ DO NOT RUN THIS IN PRODUCTION!
+npm run seed  # This will DELETE all data and create dummy data!
+
+# ✅ Use this instead for production
+npm run seed:production  # Safe for production
+```
+
+## 6. Production Deployment Workflow
+
+### Initial Setup (First Time Deployment)
 
 ```bash
 # 1. Set environment variables
 export NODE_ENV=production
+export DATABASE_URL=postgresql://user:password@host:port/database
+export JWT_SECRET=your-strong-secret-key-min-32-characters
+export CORS_ORIGIN=https://your-frontend-domain.com
+
+# 2. Install dependencies
+npm ci --production
+
+# 3. Build the application
+npm run build
+
+# 4. Run database migrations
+npm run migration:run
+
+# 5. Seed master data (roles, permissions, payment methods, expense categories)
+npm run seed:production
+
+# 6. Create admin user
+ADMIN_PASSWORD=your-strong-password-here npm run create-admin
+
+# 7. Start the application
+npm run start:prod
+```
+
+### Subsequent Deployments (Updates)
+
+```bash
+# 1. Set environment variables (if changed)
+export NODE_ENV=production
 export DATABASE_URL=postgresql://...
-export JWT_SECRET=your-secret-key
+export JWT_SECRET=...
+
+# 2. Pull latest code
+git pull origin main
+
+# 3. Install dependencies (if package.json changed)
+npm ci --production
+
+# 4. Build the application
+npm run build
+
+# 5. Run new migrations (if any)
+npm run migration:run
+
+# 6. Restart the application
+pm2 restart sibubur-api
+# or
+systemctl restart sibubur-api
+```
+
+### Post-Deployment Setup
+
+After initial deployment, you need to create business data via API or admin panel:
+
+1. **Create Stores** - POST `/stores`
+2. **Create Product Categories** - POST `/product-categories`
+3. **Create Products** - POST `/products`
+4. **Create Product Addons** - POST `/product-addons`
+5. **Create Employees** - POST `/employees`
+6. **Create Supplies** - POST `/supplies`
+7. **Create Additional Users** - POST `/users` (with appropriate roles)
+
+### Deployment Example (Complete)
+
+```bash
+# 1. Set environment variables
+export NODE_ENV=production
+export DATABASE_URL=postgresql://user:password@host:port/database
+export JWT_SECRET=your-secret-key-min-32-characters
+export JWT_EXPIRES_IN=24h
+export CORS_ORIGIN=https://your-frontend-domain.com
+export THROTTLE_TTL=60
+export THROTTLE_LIMIT=100
 
 # 2. Install dependencies
 npm ci --production
@@ -245,8 +412,21 @@ npm run build
 # 4. Run migrations
 npm run migration:run
 
-# 5. Start the application
-npm run start:prod
+# 5. Seed master data (first time only)
+npm run seed:production
+
+# 6. Create admin user (first time only)
+ADMIN_PASSWORD=your-strong-password-here npm run create-admin
+
+# 7. Start the application with PM2
+pm2 start dist/main.js --name sibubur-api
+pm2 save
+pm2 startup
+
+# Or with systemd
+# (configure systemd service file first)
+systemctl start sibubur-api
+systemctl enable sibubur-api
 ```
 
 ## Monitoring
@@ -282,4 +462,21 @@ If legitimate requests are being blocked:
 2. Increase `THROTTLE_TTL`
 3. Use `@Throttle()` decorator for specific routes
 4. Consider implementing IP whitelisting
+
+### Seeder Issues
+
+**Error: "Seeder cannot be run in production environment!"**
+- This is expected behavior. Development seeder is blocked in production.
+- Use `npm run seed:production` instead for production seeding.
+
+**Error: "SuperAdmin user already exists!"**
+- Admin user already exists. If you need to reset password, use API or update directly in database.
+- To create additional users, use the API endpoint: POST `/users`
+
+**Error: "SuperAdmin role does not exist!"**
+- Run `npm run seed:production` first to create roles and permissions.
+
+**Seeder creates duplicate data:**
+- Production seeder is idempotent - it only creates data if it doesn't exist.
+- If you see duplicates, check database constraints or run seeder again (it will skip existing data).
 

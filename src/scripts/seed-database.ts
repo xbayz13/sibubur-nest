@@ -25,6 +25,25 @@ import { Expense } from '../entities/expense.entity';
 import { Attendance, AttendanceStatus } from '../entities/attendance.entity';
 
 async function seedDatabase() {
+  // ============================================
+  // SAFETY CHECK: Prevent running in production
+  // ============================================
+  if (process.env.NODE_ENV === 'production') {
+    console.error('\n❌ ERROR: Seeder cannot be run in production environment!');
+    console.error('   This is a safety measure to prevent data loss.');
+    console.error('   If you really need to seed production, use: npm run seed:production');
+    console.error('   For creating admin user, use: npm run create-admin');
+    process.exit(1);
+  }
+
+  // WARNING for non-development environments
+  if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test') {
+    console.warn('\n⚠️  WARNING: Running seeder in non-development environment!');
+    console.warn('   This will DELETE all existing data!');
+    console.warn('   Press Ctrl+C to cancel, or wait 10 seconds to continue...');
+    await new Promise(resolve => setTimeout(resolve, 10000));
+  }
+
   // Create DataSource connection
   let dbConfig: any;
 
@@ -65,12 +84,9 @@ async function seedDatabase() {
     await dataSource.initialize();
     console.log('✅ Database connected');
 
-    // Clear existing data (optional - comment out if you want to keep existing data)
+    // Clear existing data (only in development/test)
     console.log('\n🗑️  Clearing existing data...');
-    const queryRunner = dataSource.createQueryRunner();
-    await queryRunner.connect();
-    
-    // Use raw SQL to clear all tables (safer for empty tables)
+    console.log('⚠️  This will DELETE all data in the following tables:');
     const tables = [
       'order_item_addons',
       'order_items',
@@ -95,6 +111,13 @@ async function seedDatabase() {
       'permissions',
       'roles',
     ];
+    
+    tables.forEach(table => console.log(`   - ${table}`));
+    console.log('\n   Press Ctrl+C to cancel, or wait 5 seconds to continue...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
     
     for (const table of tables) {
       try {
@@ -341,8 +364,6 @@ async function seedDatabase() {
     const paymentMethods = [
       { name: 'Cash' },
       { name: 'QRIS' },
-      { name: 'Bank Transfer' },
-      { name: 'E-Wallet' },
     ];
 
     const savedPaymentMethods: PaymentMethod[] = [];
