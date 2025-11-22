@@ -63,6 +63,40 @@ export class WeatherController {
     return this.weatherService.remove(+id);
   }
 
+  @Post('cleanup')
+  @ApiOperation({ 
+    summary: 'Cleanup old weather data',
+    description: 'Menghapus data cuaca lama yang tidak digunakan (tidak ada produksi terkait). Default: keep 90 hari terakhir'
+  })
+  @ApiQuery({ 
+    name: 'keepDays', 
+    required: false,
+    description: 'Jumlah hari data cuaca yang akan dipertahankan. Default: 90',
+    type: Number,
+    example: 90
+  })
+  async cleanupOldWeather(@Query('keepDays') keepDays?: string) {
+    const days = keepDays ? parseInt(keepDays, 10) : 90;
+    const deleted = await this.weatherService.cleanupOldWeather(days);
+    return {
+      message: `Berhasil menghapus ${deleted} data cuaca lama`,
+      deletedCount: deleted,
+    };
+  }
+
+  @Post('deduplicate')
+  @ApiOperation({ 
+    summary: 'Deduplicate weather data',
+    description: 'Menghapus duplikasi data cuaca untuk tanggal yang sama. Menjaga data yang paling baru dan yang digunakan di produksi'
+  })
+  async deduplicateWeather() {
+    const deleted = await this.weatherService.deduplicateWeather();
+    return {
+      message: `Berhasil menghapus ${deleted} data cuaca duplikat`,
+      deletedCount: deleted,
+    };
+  }
+
   @Get('bmkg/forecast')
   @Public() // No authentication required
   @ApiOperation({ 

@@ -417,18 +417,50 @@ export class ReportsService {
       where: { date: targetDate as any },
     });
 
+    // Helper function to check if weather conditions are similar
+    const isSimilarWeather = (condition1: string, condition2: string): boolean => {
+      if (!condition1 || !condition2) return false;
+      const c1 = condition1.toLowerCase();
+      const c2 = condition2.toLowerCase();
+      
+      // Exact match
+      if (c1 === c2) return true;
+      
+      // Group similar conditions
+      const sunnyGroup = ['sunny', 'cerah', 'cerah berawan'];
+      const cloudyGroup = ['cloudy', 'berawan', 'cerah berawan'];
+      const rainyGroup = ['rainy', 'hujan', 'hujan ringan', 'hujan sedang', 'hujan lebat'];
+      const stormyGroup = ['stormy', 'badai', 'hujan lebat', 'hujan deras'];
+      
+      const groups = [sunnyGroup, cloudyGroup, rainyGroup, stormyGroup];
+      
+      for (const group of groups) {
+        if (group.includes(c1) && group.includes(c2)) {
+          return true;
+        }
+      }
+      
+      return false;
+    };
+
     // Calculate weather-based adjustments
     let weatherMultiplier = 1.0;
     if (targetWeather && targetWeather.weatherJson) {
       const targetCondition = targetWeather.weatherJson.condition;
-      const sameWeatherProductions = historicalProductions.filter(
-        (p) => p.weather?.weatherJson?.condition === targetCondition,
+      
+      // Find productions with similar weather conditions
+      const similarWeatherProductions = historicalProductions.filter(
+        (p) => {
+          const prodCondition = p.weather?.weatherJson?.condition;
+          return prodCondition && isSimilarWeather(targetCondition, prodCondition);
+        },
       );
-      if (sameWeatherProductions.length > 0) {
-        const avgProductionForWeather = sameWeatherProductions.reduce(
+      
+      if (similarWeatherProductions.length > 0) {
+        const avgProductionForWeather = similarWeatherProductions.reduce(
           (sum, p) => sum + (p.porridgeAmount || 0),
           0,
-        ) / sameWeatherProductions.length;
+        ) / similarWeatherProductions.length;
         const overallAvgProduction =
           historicalProductions.reduce(
             (sum, p) => sum + (p.porridgeAmount || 0),
@@ -439,18 +471,15 @@ export class ReportsService {
         }
       }
 
-      // Weather-specific adjustments
-      switch (targetCondition) {
-        case 'rainy':
-        case 'stormy':
-          weatherMultiplier *= 1.2; // More porridge needed in bad weather
-          break;
-        case 'sunny':
-          weatherMultiplier *= 0.9; // Less porridge in sunny weather
-          break;
-        case 'cloudy':
-          weatherMultiplier *= 1.0; // Normal
-          break;
+      // Weather-specific adjustments based on condition type
+      const targetConditionLower = targetCondition.toLowerCase();
+      if (targetConditionLower.includes('rain') || targetConditionLower.includes('hujan') || 
+          targetConditionLower.includes('storm') || targetConditionLower.includes('badai')) {
+        weatherMultiplier *= 1.2; // More porridge needed in bad weather
+      } else if (targetConditionLower.includes('sunny') || targetConditionLower.includes('cerah')) {
+        weatherMultiplier *= 0.9; // Less porridge in sunny weather
+      } else {
+        weatherMultiplier *= 1.0; // Normal for cloudy/other
       }
     }
 
