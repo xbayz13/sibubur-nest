@@ -13,8 +13,8 @@ export class WeatherService {
   ) {}
 
   async create(createWeatherDto: CreateWeatherDto): Promise<Weather> {
-    const weather = this.weatherRepository.create(createWeatherDto);
-    return await this.weatherRepository.save(weather);
+    // Use createOrUpdate to prevent duplicates
+    return await this.createOrUpdate(createWeatherDto);
   }
 
   async findAll(): Promise<Weather[]> {
@@ -152,7 +152,20 @@ export class WeatherService {
       return await this.weatherRepository.save(existing);
     } else {
       // Create new record
-      return await this.create(createWeatherDto);
+      const weather = this.weatherRepository.create(createWeatherDto);
+      const saved = await this.weatherRepository.save(weather);
+      
+      // Auto cleanup old weather data periodically (every 10 new records)
+      // This prevents database from getting too large
+      const totalWeather = await this.weatherRepository.count();
+      if (totalWeather % 10 === 0) {
+        // Run cleanup in background (don't await)
+        this.cleanupOldWeather(90).catch(err => {
+          console.error('Error during auto cleanup:', err);
+        });
+      }
+      
+      return saved;
     }
   }
 }
