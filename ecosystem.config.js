@@ -7,11 +7,13 @@
  *   pm2 startup
  */
 
+const path = require('path');
+
 module.exports = {
   apps: [{
     name: 'sibubur-api',
-    script: 'dist/main.js',
-    cwd: process.cwd(),
+    script: path.resolve(__dirname, 'dist/main.js'),
+    cwd: __dirname,
     instances: 1,
     exec_mode: 'fork',
     env: {
