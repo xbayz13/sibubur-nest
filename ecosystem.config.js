@@ -12,7 +12,7 @@ const path = require('path');
 module.exports = {
   apps: [{
     name: 'sibubur-api',
-    script: path.resolve(__dirname, 'dist/main.js'),
+    script: path.resolve(__dirname, 'dist/src/main.js'),
     cwd: __dirname,
     instances: 1,
     exec_mode: 'fork',
@@ -40,4 +40,3 @@ module.exports = {
     shutdown_with_message: true,
   }]
 };
-
