@@ -48,5 +48,12 @@ export const envValidationSchema = Joi.object({
   // Rate Limiting
   THROTTLE_TTL: Joi.number().default(60),
   THROTTLE_LIMIT: Joi.number().default(100),
+
+  // Cache (reports TTL in milliseconds)
+  CACHE_TTL_REPORT: Joi.number().default(120000),
+
+  // Logging: in production, request log only when LOG_LEVEL=debug or sampled (LOG_SAMPLE_RATE 0-1)
+  LOG_LEVEL: Joi.string().valid('debug', 'info', 'warn', 'error').default('info'),
+  LOG_SAMPLE_RATE: Joi.number().min(0).max(1).default(0.01),
 });
 
