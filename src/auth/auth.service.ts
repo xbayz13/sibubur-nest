@@ -17,6 +17,9 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  /**
+   * Registers a user and returns access token.
+   */
   async signup(
     username: string,
     password: string,
@@ -34,17 +37,17 @@ export class AuthService {
       const savedUser = await this.userRepository.save(user);
       return await this.login(savedUser);
     } catch (error) {
-      // Handle duplicate username error
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.code === '23505') {
         throw new ConflictException('Username already exists');
       }
-      // Handle other database errors
       throw new InternalServerErrorException('Failed to create user');
     }
   }
 
+  /**
+   * Returns JWT access token for the given user (with role and store in payload).
+   */
   async login(user: User): Promise<{ access_token: string }> {
-    // Load role and store to include in JWT payload
     const userWithRelations = await this.userRepository.findOne({
       where: { id: user.id },
       relations: ['role', 'store'],
@@ -60,6 +63,9 @@ export class AuthService {
     return { access_token: this.jwtService.sign(payload) };
   }
 
+  /**
+   * Validates username and password; returns user or null.
+   */
   async validateUser(username: string, password: string): Promise<User | null> {
     const user = await this.userRepository.findOne({
       where: { username },

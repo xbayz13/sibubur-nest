@@ -120,22 +120,33 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should return access token for user', () => {
+    it('should return access token for user', async () => {
       const mockUser = {
         id: 1,
         username: 'testuser',
         roleId: 1,
       } as User;
 
+      mockUserRepository.findOne.mockResolvedValue({
+        ...mockUser,
+        role: { name: 'admin' },
+        storeId: 1,
+      });
       const mockToken = 'mock-access-token';
       mockJwtService.sign.mockReturnValue(mockToken);
 
-      const result = service.login(mockUser);
+      const result = await service.login(mockUser);
 
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where: { id: mockUser.id },
+        relations: ['role', 'store'],
+      });
       expect(mockJwtService.sign).toHaveBeenCalledWith({
         username: mockUser.username,
         sub: mockUser.id,
         roleId: mockUser.roleId,
+        roleName: 'admin',
+        storeId: 1,
       });
       expect(result).toEqual({ access_token: mockToken });
     });
@@ -159,7 +170,7 @@ describe('AuthService', () => {
 
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
         where: { username },
-        relations: ['role'],
+        relations: ['role', 'store'],
       });
       expect(bcrypt.compare).toHaveBeenCalledWith(password, mockUser.passwordHash);
       expect(result).toEqual(mockUser);
