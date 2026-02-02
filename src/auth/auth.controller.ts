@@ -14,6 +14,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { UsersService } from '../users/users.service';
+import { PermissionsService } from '../permissions/permissions.service';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -21,6 +22,7 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private usersService: UsersService,
+    private permissionsService: PermissionsService,
   ) {}
 
   @Post('signup')
@@ -35,19 +37,19 @@ export class AuthController {
     );
   }
 
-      @Post('login')
-      @ApiOperation({ summary: 'Login user' })
-      @ApiBody({ type: LoginDto })
-      async login(@Body() loginDto: LoginDto) {
-        const user = await this.authService.validateUser(
-          loginDto.username,
-          loginDto.password,
-        );
-        if (!user) {
-          throw new UnauthorizedException('Invalid credentials');
-        }
-        return await this.authService.login(user);
-      }
+  @Post('login')
+  @ApiOperation({ summary: 'Login user' })
+  @ApiBody({ type: LoginDto })
+  async login(@Body() loginDto: LoginDto) {
+    const user = await this.authService.validateUser(
+      loginDto.username,
+      loginDto.password,
+    );
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return await this.authService.login(user);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
@@ -67,16 +69,17 @@ export class AuthController {
       if (user.role?.name === 'SuperAdmin') {
         permissions.push('superadmin:*');
       } else if (user.role?.name === 'Owner') {
-        // Owner has all permissions - return all permission slugs
-        // For now, we'll fetch all permissions and return their slugs
-        // In production, you might want to cache this or handle it differently
-        if (user.role?.rolePermissions && user.role.rolePermissions.length > 0) {
-          // Owner role should have all permissions assigned
-          user.role.rolePermissions.forEach((rp: any) => {
+        // Owner has all permissions: use rolePermissions if present, else fetch all permissions
+        const rolePerms = user.role?.rolePermissions ?? [];
+        if (rolePerms.length > 0) {
+          rolePerms.forEach((rp: { permission?: { slug?: string } }) => {
             if (rp.permission?.slug) {
               permissions.push(rp.permission.slug);
             }
           });
+        } else {
+          const allPermissions = await this.permissionsService.findAll();
+          permissions.push(...allPermissions.map((p) => p.slug));
         }
       } else {
         // Regular users get permissions from their role

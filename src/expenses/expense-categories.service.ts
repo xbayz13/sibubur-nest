@@ -20,8 +20,9 @@ export class ExpenseCategoriesService {
     try {
       const category = this.categoryRepository.create(createCategoryDto);
       return await this.categoryRepository.save(category);
-    } catch (error) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.code === '23505') {
+    } catch (error: unknown) {
+      const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+      if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Category name already exists');
       }
       throw error;

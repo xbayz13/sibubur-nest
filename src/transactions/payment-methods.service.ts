@@ -20,8 +20,9 @@ export class PaymentMethodsService {
     try {
       const paymentMethod = this.paymentMethodRepository.create(createPaymentMethodDto);
       return await this.paymentMethodRepository.save(paymentMethod);
-    } catch (error) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.code === '23505') {
+    } catch (error: unknown) {
+      const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+      if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Payment method name already exists');
       }
       throw error;

@@ -4,10 +4,19 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
+function parseOptionalInt(value: string | undefined): number | undefined {
+  if (value === undefined || value === '') return undefined;
+  const n = Number(value);
+  if (Number.isNaN(n) || !Number.isInteger(n)) return undefined;
+  return n;
+}
 
 @ApiTags('reports')
 @Controller('reports')
@@ -22,30 +31,38 @@ export class ReportsController {
     @Param('date') date: string,
     @Query('storeId') storeId?: string,
   ) {
-    return this.reportsService.getDailyReport(date, storeId ? +storeId : undefined);
+    const storeIdNum = parseOptionalInt(storeId);
+    if (storeId !== undefined && storeId !== '' && storeIdNum === undefined) {
+      throw new BadRequestException('storeId must be a valid integer');
+    }
+    return this.reportsService.getDailyReport(date, storeIdNum);
   }
 
   @Get('monthly/:year/:month')
   @ApiOperation({ summary: 'Get monthly report' })
   getMonthlyReport(
-    @Param('year') year: string,
-    @Param('month') month: string,
+    @Param('year', ParseIntPipe) year: number,
+    @Param('month', ParseIntPipe) month: number,
     @Query('storeId') storeId?: string,
   ) {
-    return this.reportsService.getMonthlyReport(
-      +year,
-      +month,
-      storeId ? +storeId : undefined,
-    );
+    const storeIdNum = parseOptionalInt(storeId);
+    if (storeId !== undefined && storeId !== '' && storeIdNum === undefined) {
+      throw new BadRequestException('storeId must be a valid integer');
+    }
+    return this.reportsService.getMonthlyReport(year, month, storeIdNum);
   }
 
   @Get('yearly/:year')
   @ApiOperation({ summary: 'Get yearly report' })
   getYearlyReport(
-    @Param('year') year: string,
+    @Param('year', ParseIntPipe) year: number,
     @Query('storeId') storeId?: string,
   ) {
-    return this.reportsService.getYearlyReport(+year, storeId ? +storeId : undefined);
+    const storeIdNum = parseOptionalInt(storeId);
+    if (storeId !== undefined && storeId !== '' && storeIdNum === undefined) {
+      throw new BadRequestException('storeId must be a valid integer');
+    }
+    return this.reportsService.getYearlyReport(year, storeIdNum);
   }
 
   @Get('recommendations/:date')
@@ -55,10 +72,20 @@ export class ReportsController {
     @Query('storeId') storeId?: string,
     @Query('lookbackDays') lookbackDays?: string,
   ) {
+    const storeIdNum = parseOptionalInt(storeId);
+    if (storeId !== undefined && storeId !== '' && storeIdNum === undefined) {
+      throw new BadRequestException('storeId must be a valid integer');
+    }
+    const lookback = lookbackDays !== undefined && lookbackDays !== ''
+      ? parseOptionalInt(lookbackDays) ?? 30
+      : 30;
+    if (lookback <= 0) {
+      throw new BadRequestException('lookbackDays must be a positive integer');
+    }
     return this.reportsService.getProductionRecommendations(
       date,
-      storeId ? +storeId : undefined,
-      lookbackDays ? +lookbackDays : 30,
+      storeIdNum,
+      lookback,
     );
   }
 }

@@ -20,8 +20,9 @@ export class StoresService {
     try {
       const store = this.storeRepository.create(createStoreDto);
       return await this.storeRepository.save(store);
-    } catch (error) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.code === '23505') {
+    } catch (error: unknown) {
+      const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+      if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Store name already exists');
       }
       throw error;

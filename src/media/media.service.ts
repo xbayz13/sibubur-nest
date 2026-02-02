@@ -35,10 +35,11 @@ export class MediaService {
       throw new BadRequestException('No file provided');
     }
 
-    // Generate unique filename
+    // Generate unique filename (sanitize originalname to prevent path traversal)
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
-    const fileExtension = path.extname(file.originalname);
+    const safeBasename = path.basename(file.originalname || 'file').replace(/\.\./g, '');
+    const fileExtension = path.extname(safeBasename) || '';
     const fileName = `${timestamp}-${randomString}${fileExtension}`;
     const filePath = path.join(this.uploadDir, fileName);
 

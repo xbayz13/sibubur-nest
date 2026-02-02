@@ -28,8 +28,9 @@ export class UsersService {
         storeId: createUserDto.storeId || null,
       });
       return await this.userRepository.save(user);
-    } catch (error) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.code === '23505') {
+    } catch (error: unknown) {
+      const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+      if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Username already exists');
       }
       throw error;

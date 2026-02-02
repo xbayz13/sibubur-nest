@@ -20,8 +20,9 @@ export class PermissionsService {
     try {
       const permission = this.permissionRepository.create(createPermissionDto);
       return await this.permissionRepository.save(permission);
-    } catch (error) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.code === '23505') {
+    } catch (error: unknown) {
+      const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+      if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Permission slug already exists');
       }
       throw error;

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, DataSource } from 'typeorm';
 import { Transaction, TransactionStatus } from '../entities/transaction.entity';
 import { Order, OrderStatus } from '../entities/order.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -18,6 +18,7 @@ export class TransactionsService {
     private transactionRepository: Repository<Transaction>,
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
+    private dataSource: DataSource,
     private eventEmitter: EventEmitter2,
   ) {}
 
@@ -33,6 +34,7 @@ export class TransactionsService {
 
   /**
    * Creates a paid transaction and marks the order as paid. Emits ORDER_PAID event.
+   * Wrapped in a database transaction for consistency.
    */
   async create(createTransactionDto: CreateTransactionDto, authorId: number): Promise<Transaction> {
     const order = await this.orderRepository.findOne({
@@ -48,31 +50,42 @@ export class TransactionsService {
     }
 
     const transactionNumber = await this.generateTransactionNumber();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    const transaction = this.transactionRepository.create({
-      transactionNumber,
-      paymentMethodId: createTransactionDto.paymentMethodId,
-      amount: createTransactionDto.amount,
-      status: TransactionStatus.PAID,
-      authorId,
-      storeId: createTransactionDto.storeId,
-      orderId: createTransactionDto.orderId,
-    });
+    try {
+      const transaction = queryRunner.manager.create(Transaction, {
+        transactionNumber,
+        paymentMethodId: createTransactionDto.paymentMethodId,
+        amount: createTransactionDto.amount,
+        status: TransactionStatus.PAID,
+        authorId,
+        storeId: createTransactionDto.storeId,
+        orderId: createTransactionDto.orderId,
+      });
+      const savedTransaction = await queryRunner.manager.save(Transaction, transaction);
 
-    const savedTransaction = await this.transactionRepository.save(transaction);
+      order.status = OrderStatus.PAID;
+      await queryRunner.manager.save(Order, order);
 
-    order.status = OrderStatus.PAID;
-    await this.orderRepository.save(order);
+      await queryRunner.commitTransaction();
 
-    const payload: OrderPaidPayload = {
-      orderId: createTransactionDto.orderId,
-      transactionId: savedTransaction.id,
-      amount: Number(createTransactionDto.amount),
-      storeId: createTransactionDto.storeId,
-    };
-    this.eventEmitter.emit(ORDER_PAID, payload);
+      const payload: OrderPaidPayload = {
+        orderId: createTransactionDto.orderId,
+        transactionId: savedTransaction.id,
+        amount: Number(createTransactionDto.amount),
+        storeId: createTransactionDto.storeId,
+      };
+      this.eventEmitter.emit(ORDER_PAID, payload);
 
-    return await this.findOne(savedTransaction.id);
+      return await this.findOne(savedTransaction.id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   /**

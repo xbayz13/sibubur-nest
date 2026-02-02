@@ -20,8 +20,9 @@ export class RolesService {
     try {
       const role = this.roleRepository.create(createRoleDto);
       return await this.roleRepository.save(role);
-    } catch (error) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.code === '23505') {
+    } catch (error: unknown) {
+      const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+      if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Role name already exists');
       }
       throw error;
