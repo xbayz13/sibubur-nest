@@ -4,14 +4,16 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, Between, IsNull } from 'typeorm';
+import { Repository, DataSource, Between, IsNull, In } from 'typeorm';
 import { Order, OrderStatus } from '../entities/order.entity';
 import { OrderItem } from '../entities/order-item.entity';
 import { OrderItemAddon } from '../entities/order-item-addon.entity';
 import { Product } from '../entities/product.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { ORDER_CREATED, type OrderCreatedPayload } from '../events/order.events';
 
 @Injectable()
 export class OrdersService {
@@ -27,8 +29,12 @@ export class OrdersService {
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
     private dataSource: DataSource,
+    private eventEmitter: EventEmitter2,
   ) {}
 
+  /**
+   * Generates a unique order number in format ORD-YYYYMMDD-XXXX.
+   */
   async generateOrderNumber(): Promise<string> {
     const date = new Date();
     const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
@@ -36,11 +42,49 @@ export class OrdersService {
     return `ORD-${dateStr}-${random}`;
   }
 
+  /**
+   * Creates an order with items and addons. Uses batch product lookup and bulk insert.
+   * @param createOrderDto - Order payload (storeId, customerName, items with productId/quantity/addons).
+   * @param userId - Authenticated user id.
+   * @returns Saved order with relations.
+   * @throws BadRequestException if userId invalid.
+   * @throws NotFoundException if any product not found or deleted.
+   */
   async create(createOrderDto: CreateOrderDto, userId: number): Promise<Order> {
-    // Validate userId
-    if (!userId || userId === null || userId === undefined || isNaN(userId) || userId <= 0) {
+    if (!userId || isNaN(userId) || userId <= 0) {
       throw new BadRequestException(`Invalid user ID: ${userId}. User authentication required.`);
     }
+
+    const productIds = [...new Set(createOrderDto.items.map((i) => i.productId))];
+    const products = await this.productRepository.find({
+      where: { id: In(productIds), deletedAt: IsNull() },
+    });
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    let subtotalAmount = 0;
+    const itemPayloads: { product: Product; quantity: number; addons: { addonId: number; price: number; quantity: number }[]; lineTotal: number }[] = [];
+
+    for (const itemDto of createOrderDto.items) {
+      const product = productMap.get(itemDto.productId);
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${itemDto.productId} not found or has been deleted`);
+      }
+      let lineTotal = Number(product.price) * itemDto.quantity;
+      const addons = itemDto.addons ?? [];
+      for (const a of addons) {
+        lineTotal += a.price * a.quantity;
+      }
+      subtotalAmount += lineTotal;
+      itemPayloads.push({
+        product,
+        quantity: itemDto.quantity,
+        addons: addons.map((a) => ({ addonId: a.addonId, price: a.price, quantity: a.quantity })),
+        lineTotal,
+      });
+    }
+
+    const taxAmount = 0;
+    const totalAmount = subtotalAmount;
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -48,40 +92,6 @@ export class OrdersService {
 
     try {
       const orderNumber = await this.generateOrderNumber();
-      
-      let subtotalAmount = 0;
-      const orderItems: OrderItem[] = [];
-
-      // Calculate totals
-      for (const itemDto of createOrderDto.items) {
-        const product = await this.productRepository.findOne({
-          where: { id: itemDto.productId, deletedAt: IsNull() },
-        });
-
-        if (!product) {
-          throw new NotFoundException(`Product with ID ${itemDto.productId} not found or has been deleted`);
-        }
-
-        let itemTotal = product.price * itemDto.quantity;
-        
-        // Calculate addons
-        if (itemDto.addons && itemDto.addons.length > 0) {
-          for (const addonDto of itemDto.addons) {
-            itemTotal += addonDto.price * addonDto.quantity;
-          }
-        }
-
-        subtotalAmount += itemTotal;
-      }
-
-      const taxAmount = 0; // No tax
-      const totalAmount = subtotalAmount; // Total equals subtotal
-
-      // Double-check userId before creating order
-      if (!userId || userId === null || userId === undefined || isNaN(userId) || userId <= 0) {
-        throw new BadRequestException(`Invalid user ID: ${userId}. Cannot create order without valid user.`);
-      }
-
       const order = queryRunner.manager.create(Order, {
         orderNumber,
         customerName: createOrderDto.customerName,
@@ -90,54 +100,48 @@ export class OrdersService {
         taxAmount,
         totalAmount,
         storeId: createOrderDto.storeId,
-        userId: Number(userId), // Ensure it's a number
+        userId: Number(userId),
       });
-
       const savedOrder = await queryRunner.manager.save(order);
 
-      // Create order items
-      for (const itemDto of createOrderDto.items) {
-        const product = await this.productRepository.findOne({
-          where: { id: itemDto.productId },
-        });
-
-        if (!product) {
-          throw new NotFoundException(`Product with ID ${itemDto.productId} not found`);
-        }
-
-        let lineTotal = product.price * itemDto.quantity;
-        
-        const orderItem = queryRunner.manager.create(OrderItem, {
+      const orderItemsToSave = itemPayloads.map((p) =>
+        queryRunner.manager.create(OrderItem, {
           orderId: savedOrder.id,
-          productId: itemDto.productId,
-          unitPrice: product.price,
-          quantity: itemDto.quantity,
-          lineTotal,
-        });
+          productId: p.product.id,
+          unitPrice: p.product.price,
+          quantity: p.quantity,
+          lineTotal: p.lineTotal,
+        }),
+      );
+      const savedOrderItems = (await queryRunner.manager.save(OrderItem, orderItemsToSave)) as OrderItem[];
 
-        const savedOrderItem = await queryRunner.manager.save(orderItem);
-
-        // Create order item addons
-        if (itemDto.addons && itemDto.addons.length > 0) {
-          for (const addonDto of itemDto.addons) {
-            const orderItemAddon = queryRunner.manager.create(OrderItemAddon, {
-              orderItemId: savedOrderItem.id,
-              addonId: addonDto.addonId,
-              addonPrice: addonDto.price,
-              quantity: addonDto.quantity,
-            });
-
-            await queryRunner.manager.save(orderItemAddon);
-            lineTotal += addonDto.price * addonDto.quantity;
-          }
-
-          // Update line total with addons
-          savedOrderItem.lineTotal = lineTotal;
-          await queryRunner.manager.save(savedOrderItem);
+      const addonsToSave: OrderItemAddon[] = [];
+      for (let i = 0; i < itemPayloads.length; i++) {
+        const orderItemId = savedOrderItems[i]!.id;
+        for (const a of itemPayloads[i]!.addons) {
+          addonsToSave.push(
+            queryRunner.manager.create(OrderItemAddon, {
+              orderItemId,
+              addonId: a.addonId,
+              addonPrice: a.price,
+              quantity: a.quantity,
+            }),
+          );
         }
+      }
+      if (addonsToSave.length > 0) {
+        await queryRunner.manager.save(OrderItemAddon, addonsToSave);
       }
 
       await queryRunner.commitTransaction();
+
+      const payload: OrderCreatedPayload = {
+        orderId: savedOrder.id,
+        storeId: createOrderDto.storeId,
+        userId: Number(userId),
+        totalAmount: Number(totalAmount),
+      };
+      this.eventEmitter.emit(ORDER_CREATED, payload);
 
       return await this.findOne(savedOrder.id);
     } catch (error) {
@@ -148,41 +152,31 @@ export class OrdersService {
     }
   }
 
+  /**
+   * Lists orders optionally filtered by store and date (YYYY-MM-DD).
+   */
   async findAll(storeId?: number, date?: string): Promise<Order[]> {
     const where: any = {};
     if (storeId) {
       where.storeId = storeId;
     }
-
-    // Add date filtering
     if (date) {
-      // Parse date string (YYYY-MM-DD) and create date range
-      // Use UTC to avoid timezone issues
       const dateStr = date.trim();
       const start = new Date(dateStr + 'T00:00:00.000Z');
       const end = new Date(dateStr + 'T23:59:59.999Z');
-      
-      this.logger.log(`[findAll] Filtering by date: ${dateStr}`);
-      this.logger.log(`[findAll] Start: ${start.toISOString()}, End: ${end.toISOString()}`);
-      
       where.createdAt = Between(start, end);
     }
 
-    const orders = await this.orderRepository.find({
+    return await this.orderRepository.find({
       where,
       relations: ['store', 'user', 'orderItems', 'orderItems.product', 'orderItems.orderItemAddons', 'orderItems.orderItemAddons.addon'],
       order: { createdAt: 'DESC' },
     });
-
-    this.logger.log(`[findAll] Found ${orders.length} orders`);
-    if (orders.length > 0 && date) {
-      this.logger.log(`[findAll] First order createdAt: ${orders[0].createdAt}`);
-      this.logger.log(`[findAll] Last order createdAt: ${orders[orders.length - 1].createdAt}`);
-    }
-
-    return orders;
   }
 
+  /**
+   * Finds one order by id with store, user, items and addons.
+   */
   async findOne(id: number): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { id },
@@ -194,6 +188,9 @@ export class OrdersService {
     return order;
   }
 
+  /**
+   * Finds order by order number.
+   */
   async findByOrderNumber(orderNumber: string): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { orderNumber },
@@ -205,9 +202,11 @@ export class OrdersService {
     return order;
   }
 
+  /**
+   * Updates order; fails if order is already paid.
+   */
   async update(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
     const order = await this.findOne(id);
-    
     if (order.status === OrderStatus.PAID) {
       throw new BadRequestException('Cannot update a paid order');
     }
@@ -216,9 +215,11 @@ export class OrdersService {
     return await this.orderRepository.save(order);
   }
 
+  /**
+   * Cancels order; fails if order is already paid.
+   */
   async cancel(id: number): Promise<Order> {
     const order = await this.findOne(id);
-    
     if (order.status === OrderStatus.PAID) {
       throw new BadRequestException('Cannot cancel a paid order');
     }
@@ -227,6 +228,9 @@ export class OrdersService {
     return await this.orderRepository.save(order);
   }
 
+  /**
+   * Marks order as paid.
+   */
   async markAsPaid(id: number): Promise<Order> {
     const order = await this.findOne(id);
     order.status = OrderStatus.PAID;

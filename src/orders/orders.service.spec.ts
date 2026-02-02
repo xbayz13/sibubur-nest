@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { Repository, DataSource, QueryRunner } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Repository, DataSource } from 'typeorm';
 import { OrdersService } from './orders.service';
 import { Order, OrderStatus } from '../entities/order.entity';
 import { OrderItem } from '../entities/order-item.entity';
@@ -22,7 +23,7 @@ describe('OrdersService', () => {
   };
 
   const mockProductRepository = {
-    findOne: jest.fn(),
+    find: jest.fn(),
   };
 
   const mockQueryRunner = {
@@ -65,6 +66,10 @@ describe('OrdersService', () => {
         {
           provide: DataSource,
           useValue: mockDataSource,
+        },
+        {
+          provide: EventEmitter2,
+          useValue: { emit: jest.fn() },
         },
       ],
     }).compile();
@@ -226,20 +231,16 @@ describe('OrdersService', () => {
         status: OrderStatus.OPEN,
       };
 
-      mockProductRepository.findOne
-        .mockResolvedValueOnce(mockProduct) // First call in create
-        .mockResolvedValueOnce(mockProduct); // Second call for order items
-      mockQueryRunner.manager.create.mockReturnValue(mockOrder);
-      // Mock save to return the order for the first call (order), then order item
+      mockProductRepository.find.mockResolvedValue([mockProduct]);
+      mockQueryRunner.manager.create.mockImplementation((entity, dto) => ({ ...dto }));
       mockQueryRunner.manager.save
-        .mockResolvedValueOnce(mockOrder) // Save order
-        .mockResolvedValueOnce({ id: 1, orderId: 1, productId: 1, quantity: 2, unitPrice: 15000, lineTotal: 30000 }); // Save order item
-      // Mock orderRepository.findOne for the final findOne call
+        .mockResolvedValueOnce(mockOrder)
+        .mockResolvedValueOnce([{ id: 1, orderId: 1, productId: 1, quantity: 2, unitPrice: 15000, lineTotal: 30000 }]);
       mockOrderRepository.findOne.mockResolvedValue(mockOrder);
 
       const result = await service.create(createOrderDto, 1);
 
-      expect(mockProductRepository.findOne).toHaveBeenCalled();
+      expect(mockProductRepository.find).toHaveBeenCalled();
       expect(mockQueryRunner.manager.create).toHaveBeenCalledWith(
         Order,
         expect.objectContaining({
@@ -284,23 +285,18 @@ describe('OrdersService', () => {
         id: 1,
         orderNumber: 'ORD-20240101-0001',
         ...createOrderDto,
-        subtotalAmount: 32000, // (15000 * 2) + (2000 * 1) = 30000 + 2000 = 32000
+        subtotalAmount: 32000,
         taxAmount: 0,
         totalAmount: 32000,
         status: OrderStatus.OPEN,
       };
 
-      mockProductRepository.findOne
-        .mockResolvedValueOnce(mockProduct) // First call in create
-        .mockResolvedValueOnce(mockProduct); // Second call for order items
-      mockQueryRunner.manager.create.mockReturnValue(mockOrder);
-      // Mock save to return the order for the first call (order), then order item, then addon, then update order item
+      mockProductRepository.find.mockResolvedValue([mockProduct]);
+      mockQueryRunner.manager.create.mockImplementation((entity, dto) => ({ ...dto }));
       mockQueryRunner.manager.save
-        .mockResolvedValueOnce(mockOrder) // Save order
-        .mockResolvedValueOnce({ id: 1, orderId: 1, productId: 1, quantity: 2, unitPrice: 15000, lineTotal: 30000 }) // Save order item
-        .mockResolvedValueOnce({ id: 1, orderItemId: 1, addonId: 1, price: 2000, quantity: 1 }) // Save order item addon
-        .mockResolvedValueOnce({ id: 1, orderId: 1, productId: 1, quantity: 2, unitPrice: 15000, lineTotal: 32000 }); // Update order item with addon
-      // Mock orderRepository.findOne for the final findOne call
+        .mockResolvedValueOnce(mockOrder)
+        .mockResolvedValueOnce([{ id: 1, orderId: 1, productId: 1, quantity: 2, unitPrice: 15000, lineTotal: 32000 }])
+        .mockResolvedValueOnce(undefined);
       mockOrderRepository.findOne.mockResolvedValue(mockOrder);
 
       const result = await service.create(createOrderDto, 1);
@@ -323,7 +319,7 @@ describe('OrdersService', () => {
         ],
       };
 
-      mockProductRepository.findOne.mockResolvedValue(null);
+      mockProductRepository.find.mockResolvedValue([]);
 
       await expect(service.create(createOrderDto, 1)).rejects.toThrow(
         NotFoundException
