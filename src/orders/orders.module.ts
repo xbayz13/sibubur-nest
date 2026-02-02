@@ -6,12 +6,13 @@ import { OrderItemAddon } from '../entities/order-item-addon.entity';
 import { Product } from '../entities/product.entity';
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
+import { OrderEventsListener } from './order-events.listener';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem, OrderItemAddon, Product]),
   ],
-  providers: [OrdersService],
+  providers: [OrdersService, OrderEventsListener],
   controllers: [OrdersController],
   exports: [OrdersService],
 })
