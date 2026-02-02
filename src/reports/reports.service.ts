@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Order } from '../entities/order.entity';
@@ -23,9 +25,19 @@ export class ReportsService {
     private attendanceRepository: Repository<Attendance>,
     @InjectRepository(Weather)
     private weatherRepository: Repository<Weather>,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
   ) {}
 
+  /**
+   * Returns daily report: revenue, orders, expenses, production, weather, attendance, recommendations.
+   * Cached by date and storeId.
+   */
   async getDailyReport(date: string, storeId?: number) {
+    const cacheKey = `report:daily:${date}:${storeId ?? 'all'}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached as Awaited<ReturnType<ReportsService['getDailyReport']>>;
+
     const startDate = new Date(date);
     startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(date);
@@ -38,23 +50,42 @@ export class ReportsService {
       where.storeId = storeId;
     }
 
-    // Get transactions (revenue)
-    const transactions = await this.transactionRepository.find({
-      where: { ...where, status: TransactionStatus.PAID },
-      relations: ['order', 'paymentMethod'],
-    });
+    const productionWhere: any = { date: date as any };
+    if (storeId) {
+      productionWhere.storeId = storeId;
+    }
+
+    const [transactions, orders, expenses, production, weather, attendances] =
+      await Promise.all([
+        this.transactionRepository.find({
+          where: { ...where, status: TransactionStatus.PAID },
+          relations: ['order', 'paymentMethod'],
+        }),
+        this.orderRepository.find({
+          where,
+          relations: ['orderItems', 'orderItems.product'],
+        }),
+        this.expenseRepository.find({
+          where,
+          relations: ['category'],
+        }),
+        this.productionRepository.findOne({
+          where: productionWhere,
+          relations: ['productionSupplies', 'productionSupplies.supply', 'weather'],
+        }),
+        this.weatherRepository.findOne({
+          where: { date: date as any },
+        }),
+        this.attendanceRepository.find({
+          where: { date: date as any },
+          relations: ['employee'],
+        }),
+      ]);
 
     const totalRevenue = transactions.reduce(
       (sum, txn) => sum + Number(txn.amount),
       0,
     );
-
-    // Get orders
-    const orders = await this.orderRepository.find({
-      where,
-      relations: ['orderItems', 'orderItems.product'],
-    });
-
     const totalOrders = orders.length;
     const totalItems = orders.reduce(
       (sum, order) =>
@@ -62,47 +93,13 @@ export class ReportsService {
         order.orderItems.reduce((itemSum, item) => itemSum + item.quantity, 0),
       0,
     );
-
-    // Get expenses
-    const expenses = await this.expenseRepository.find({
-      where,
-      relations: ['category'],
-    });
-
     const totalExpenses = expenses.reduce(
       (sum, exp) => sum + Number(exp.totalAmount),
       0,
     );
+    const presentCount = attendances.filter((a) => a.status === 'present').length;
+    const absentCount = attendances.filter((a) => a.status === 'absent').length;
 
-    // Get production
-    const productionWhere: any = { date: date as any };
-    if (storeId) {
-      productionWhere.storeId = storeId;
-    }
-    const production = await this.productionRepository.findOne({
-      where: productionWhere,
-      relations: ['productionSupplies', 'productionSupplies.supply', 'weather'],
-    });
-
-    // Get weather
-    const weather = await this.weatherRepository.findOne({
-      where: { date: date as any },
-    });
-
-    // Get attendances
-    const attendances = await this.attendanceRepository.find({
-      where: { date: date as any },
-      relations: ['employee'],
-    });
-
-    const presentCount = attendances.filter(
-      (a) => a.status === 'present',
-    ).length;
-    const absentCount = attendances.filter(
-      (a) => a.status === 'absent',
-    ).length;
-
-    // Get recommendations for next day
     const nextDate = new Date(date);
     nextDate.setDate(nextDate.getDate() + 1);
     const nextDateStr = nextDate.toISOString().split('T')[0];
@@ -112,7 +109,7 @@ export class ReportsService {
       30,
     );
 
-    return {
+    const result = {
       date,
       revenue: {
         total: totalRevenue,
@@ -139,10 +136,19 @@ export class ReportsService {
       netProfit: totalRevenue - totalExpenses,
       recommendations,
     };
+    await this.cacheManager.set(cacheKey, result);
+    return result;
   }
 
+  /**
+   * Returns monthly report: revenue, expenses, orders, productions, aggregates.
+   * Cached by year, month, storeId.
+   */
   async getMonthlyReport(year: number, month: number, storeId?: number) {
-    // Create date range - use local time for start, end of month for end
+    const cacheKey = `report:monthly:${year}:${month}:${storeId ?? 'all'}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached as Awaited<ReturnType<ReportsService['getMonthlyReport']>>;
+
     const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0);
     const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
@@ -153,28 +159,23 @@ export class ReportsService {
       where.storeId = storeId;
     }
 
-    // Get transactions
-    const transactions = await this.transactionRepository.find({
-      where: { ...where, status: TransactionStatus.PAID },
-    });
+    const [transactions, expenses, orders] = await Promise.all([
+      this.transactionRepository.find({
+        where: { ...where, status: TransactionStatus.PAID },
+      }),
+      this.expenseRepository.find({ where }),
+      this.orderRepository.find({ where }),
+    ]);
 
     const totalRevenue = transactions.reduce(
       (sum, txn) => sum + Number(txn.amount),
       0,
     );
-
-    // Get expenses
-    const expenses = await this.expenseRepository.find({ where });
-
     const totalExpenses = expenses.reduce(
       (sum, exp) => sum + Number(exp.totalAmount),
       0,
     );
 
-    // Get orders
-    const orders = await this.orderRepository.find({ where });
-
-    // Get productions - use date string comparison
     const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
     const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
     
@@ -185,12 +186,10 @@ export class ReportsService {
       },
     });
 
-    // Calculate daily statistics
     const dailyRevenueMap = new Map<string, number>();
     const dailyExpensesMap = new Map<string, number>();
     const daysWithActivitySet = new Set<string>();
 
-    // Group transactions by day
     transactions.forEach((txn) => {
       const txnDate = new Date(txn.createdAt);
       const day = `${txnDate.getFullYear()}-${String(txnDate.getMonth() + 1).padStart(2, '0')}-${String(txnDate.getDate()).padStart(2, '0')}`;
@@ -199,7 +198,6 @@ export class ReportsService {
       daysWithActivitySet.add(day);
     });
 
-    // Group expenses by day
     expenses.forEach((exp) => {
       const expDate = new Date(exp.createdAt);
       const day = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}-${String(expDate.getDate()).padStart(2, '0')}`;
@@ -208,14 +206,12 @@ export class ReportsService {
       daysWithActivitySet.add(day);
     });
 
-    // Group orders by day
     orders.forEach((order) => {
       const orderDate = new Date(order.createdAt);
       const day = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}-${String(orderDate.getDate()).padStart(2, '0')}`;
       daysWithActivitySet.add(day);
     });
 
-    // Group productions by day (production.date is a string in YYYY-MM-DD format)
     productions.forEach((production) => {
       if (production.date) {
         // Ensure production date is within the month range
@@ -227,10 +223,8 @@ export class ReportsService {
       }
     });
 
-    // Calculate days with data (days that have ANY activity)
     const daysWithData = daysWithActivitySet.size;
 
-    // Calculate averages - divide by days with data, or by total days in month if no data
     const daysInMonth = new Date(year, month, 0).getDate();
     const averageDailyRevenue = daysWithData > 0 
       ? totalRevenue / daysWithData 
@@ -239,7 +233,7 @@ export class ReportsService {
       ? totalExpenses / daysWithData 
       : (daysInMonth > 0 && totalExpenses > 0 ? totalExpenses / daysInMonth : 0);
 
-    return {
+    const result = {
       year,
       month,
       revenue: {
@@ -261,10 +255,19 @@ export class ReportsService {
       averageDailyExpenses,
       daysWithData,
     };
+    await this.cacheManager.set(cacheKey, result);
+    return result;
   }
 
+  /**
+   * Returns yearly report: revenue, expenses, orders, monthly aggregates.
+   * Cached by year, storeId.
+   */
   async getYearlyReport(year: number, storeId?: number) {
-    // Create date range - use local time
+    const cacheKey = `report:yearly:${year}:${storeId ?? 'all'}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached as Awaited<ReturnType<ReportsService['getYearlyReport']>>;
+
     const startDate = new Date(year, 0, 1, 0, 0, 0, 0);
     const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
 
@@ -275,33 +278,27 @@ export class ReportsService {
       where.storeId = storeId;
     }
 
-    // Get transactions
-    const transactions = await this.transactionRepository.find({
-      where: { ...where, status: TransactionStatus.PAID },
-    });
+    const [transactions, expenses, orders] = await Promise.all([
+      this.transactionRepository.find({
+        where: { ...where, status: TransactionStatus.PAID },
+      }),
+      this.expenseRepository.find({ where }),
+      this.orderRepository.find({ where }),
+    ]);
 
     const totalRevenue = transactions.reduce(
       (sum, txn) => sum + Number(txn.amount),
       0,
     );
-
-    // Get expenses
-    const expenses = await this.expenseRepository.find({ where });
-
     const totalExpenses = expenses.reduce(
       (sum, exp) => sum + Number(exp.totalAmount),
       0,
     );
 
-    // Get orders
-    const orders = await this.orderRepository.find({ where });
-
-    // Calculate monthly statistics
     const monthlyRevenueMap = new Map<number, number>();
     const monthlyExpensesMap = new Map<number, number>();
     const monthsWithActivitySet = new Set<number>();
 
-    // Group transactions by month (0-11)
     transactions.forEach((txn) => {
       const txnDate = new Date(txn.createdAt);
       const month = txnDate.getMonth();
@@ -310,7 +307,6 @@ export class ReportsService {
       monthsWithActivitySet.add(month);
     });
 
-    // Group expenses by month
     expenses.forEach((exp) => {
       const expDate = new Date(exp.createdAt);
       const month = expDate.getMonth();
@@ -319,17 +315,14 @@ export class ReportsService {
       monthsWithActivitySet.add(month);
     });
 
-    // Group orders by month
     orders.forEach((order) => {
       const orderDate = new Date(order.createdAt);
       const month = orderDate.getMonth();
       monthsWithActivitySet.add(month);
     });
 
-    // Calculate months with data (months that have ANY activity)
     const monthsWithData = monthsWithActivitySet.size;
 
-    // Calculate averages - divide by months with data, or by 12 if no data
     const averageMonthlyRevenue = monthsWithData > 0 
       ? totalRevenue / monthsWithData 
       : (totalRevenue > 0 ? totalRevenue / 12 : 0);
@@ -337,7 +330,7 @@ export class ReportsService {
       ? totalExpenses / monthsWithData 
       : (totalExpenses > 0 ? totalExpenses / 12 : 0);
 
-    return {
+    const result = {
       year,
       revenue: {
         total: totalRevenue,
@@ -355,15 +348,25 @@ export class ReportsService {
       averageMonthlyExpenses,
       monthsWithData,
     };
+    await this.cacheManager.set(cacheKey, result);
+    return result;
   }
 
+  /**
+   * Returns production recommendation for target date using historical sales and weather.
+   * Cached by date, storeId, lookbackDays.
+   */
   async getProductionRecommendations(
     targetDate: string,
     storeId?: number,
     lookbackDays: number = 30,
   ) {
+    const cacheKey = `report:recommendations:${targetDate}:${storeId ?? 'all'}:${lookbackDays}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached as Awaited<ReturnType<ReportsService['getProductionRecommendations']>>;
+
     const target = new Date(targetDate);
-    const targetDayOfWeek = target.getDay(); // 0 = Sunday, 6 = Saturday
+    const targetDayOfWeek = target.getDay();
     const startDate = new Date(target);
     startDate.setDate(startDate.getDate() - lookbackDays);
 
@@ -372,25 +375,26 @@ export class ReportsService {
       where.storeId = storeId;
     }
 
-    // Get historical productions
-    const historicalProductions = await this.productionRepository.find({
-      where: {
-        date: Between(startDate.toISOString().split('T')[0], targetDate) as any,
-        ...where,
-      },
-      relations: ['weather', 'store'],
-    });
+    const [historicalProductions, historicalOrders, targetWeather] = await Promise.all([
+      this.productionRepository.find({
+        where: {
+          date: Between(startDate.toISOString().split('T')[0], targetDate) as any,
+          ...where,
+        },
+        relations: ['weather'],
+      }),
+      this.orderRepository.find({
+        where: {
+          createdAt: Between(startDate, new Date(targetDate)),
+          ...where,
+        },
+        relations: ['orderItems'],
+      }),
+      this.weatherRepository.findOne({
+        where: { date: targetDate as any },
+      }),
+    ]);
 
-    // Get historical orders/transactions for the same period
-    const historicalOrders = await this.orderRepository.find({
-      where: {
-        createdAt: Between(startDate, new Date(targetDate)),
-        ...where,
-      },
-      relations: ['orderItems', 'orderItems.product'],
-    });
-
-    // Calculate average sales by day of week
     const salesByDayOfWeek: { [key: number]: number[] } = {};
     historicalOrders.forEach((order) => {
       const orderDate = new Date(order.createdAt);
@@ -405,28 +409,17 @@ export class ReportsService {
       salesByDayOfWeek[dayOfWeek].push(totalItems);
     });
 
-    // Calculate average sales for target day of week
     const targetDaySales = salesByDayOfWeek[targetDayOfWeek] || [];
     const avgSalesForDayOfWeek =
       targetDaySales.length > 0
         ? targetDaySales.reduce((a, b) => a + b, 0) / targetDaySales.length
         : 0;
 
-    // Get weather for target date (if available)
-    const targetWeather = await this.weatherRepository.findOne({
-      where: { date: targetDate as any },
-    });
-
-    // Helper function to check if weather conditions are similar
     const isSimilarWeather = (condition1: string, condition2: string): boolean => {
       if (!condition1 || !condition2) return false;
       const c1 = condition1.toLowerCase();
       const c2 = condition2.toLowerCase();
-      
-      // Exact match
       if (c1 === c2) return true;
-      
-      // Group similar conditions
       const sunnyGroup = ['sunny', 'cerah', 'cerah berawan'];
       const cloudyGroup = ['cloudy', 'berawan', 'cerah berawan'];
       const rainyGroup = ['rainy', 'hujan', 'hujan ringan', 'hujan sedang', 'hujan lebat'];
@@ -443,12 +436,10 @@ export class ReportsService {
       return false;
     };
 
-    // Calculate weather-based adjustments
     let weatherMultiplier = 1.0;
     if (targetWeather && targetWeather.weatherJson) {
       const targetCondition = targetWeather.weatherJson.condition;
       
-      // Find productions with similar weather conditions
       const similarWeatherProductions = historicalProductions.filter(
         (p) => {
           const prodCondition = p.weather?.weatherJson?.condition;
@@ -471,7 +462,6 @@ export class ReportsService {
         }
       }
 
-      // Weather-specific adjustments based on condition type
       const targetConditionLower = targetCondition.toLowerCase();
       if (targetConditionLower.includes('rain') || targetConditionLower.includes('hujan') || 
           targetConditionLower.includes('storm') || targetConditionLower.includes('badai')) {
@@ -483,7 +473,6 @@ export class ReportsService {
       }
     }
 
-    // Calculate average production vs sales ratio
     const productionSalesRatios: number[] = [];
     historicalProductions.forEach((prod) => {
       if (prod.porridgeAmount && prod.porridgeAmount > 0) {
@@ -514,16 +503,13 @@ export class ReportsService {
       productionSalesRatios.length > 0
         ? productionSalesRatios.reduce((a, b) => a + b, 0) /
           productionSalesRatios.length
-        : 1.5; // Default: produce 1.5x expected sales
+        : 1.5;
 
-    // Calculate recommended amount
     const baseRecommendation = avgSalesForDayOfWeek * avgRatio;
     const weatherAdjustedRecommendation = baseRecommendation * weatherMultiplier;
 
-    // Add buffer (10% extra to account for variations)
     const recommendedAmount = Math.ceil(weatherAdjustedRecommendation * 1.1);
 
-    // Generate recommendations text
     const recommendations: string[] = [];
 
     if (avgSalesForDayOfWeek > 0) {
@@ -570,7 +556,7 @@ export class ReportsService {
       `Rekomendasi jumlah produksi: ${recommendedAmount} porsi.`,
     );
 
-    return {
+    const result = {
       recommendedAmount,
       baseRecommendation: Math.ceil(baseRecommendation),
       weatherMultiplier,
@@ -584,6 +570,8 @@ export class ReportsService {
         lookbackDays,
       },
     };
+    await this.cacheManager.set(cacheKey, result);
+    return result;
   }
 }
 
