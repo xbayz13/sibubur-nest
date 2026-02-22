@@ -78,7 +78,7 @@ export class AuthController {
             }
           });
         } else {
-          const allPermissions = await this.permissionsService.findAll();
+          const allPermissions = await this.permissionsService.findAllUnpaginated();
           permissions.push(...allPermissions.map((p) => p.slug));
         }
       } else {
