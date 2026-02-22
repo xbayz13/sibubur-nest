@@ -19,7 +19,7 @@ export const envValidationSchema = Joi.object({
 
   // CORS: required in production (comma-separated origins allowed)
   CORS_ORIGIN: Joi.string()
-    .when('NODE_ENV', { is: 'production', then: Joi.required().min(1), otherwise: Joi.optional() }),
+    .when('NODE_ENV', { is: 'production', then: Joi.string().required().min(1), otherwise: Joi.optional() }),
 
   // Database
   DATABASE_URL: Joi.string().optional(),
