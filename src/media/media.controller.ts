@@ -4,6 +4,7 @@ import {
   Post,
   Delete,
   Param,
+  Query,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -13,6 +14,7 @@ import {
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { MediaService } from './media.service';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { memoryStorage } from 'multer';
 
@@ -90,9 +92,9 @@ export class MediaController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all media files' })
-  findAll() {
-    return this.mediaService.findAll();
+  @ApiOperation({ summary: 'Get all media files (paginated)' })
+  findAll(@Query() pagination?: PaginationQueryDto) {
+    return this.mediaService.findAll(pagination?.page, pagination?.limit);
   }
 
   @Get(':id')

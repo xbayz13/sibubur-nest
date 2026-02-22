@@ -6,12 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ExpenseCategoriesService } from './expense-categories.service';
 import { CreateExpenseCategoryDto } from './dto/create-expense-category.dto';
 import { UpdateExpenseCategoryDto } from './dto/update-expense-category.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('expense-categories')
@@ -30,9 +32,9 @@ export class ExpenseCategoriesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all expense categories' })
-  findAll() {
-    return this.categoriesService.findAll();
+  @ApiOperation({ summary: 'Get all expense categories (paginated)' })
+  findAll(@Query() pagination?: PaginationQueryDto) {
+    return this.categoriesService.findAll(pagination?.page, pagination?.limit);
   }
 
   @Get(':id')

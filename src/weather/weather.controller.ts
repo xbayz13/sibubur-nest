@@ -14,6 +14,7 @@ import { WeatherService } from './weather.service';
 import { BMKGService } from './bmkg.service';
 import { CreateWeatherDto } from './dto/create-weather.dto';
 import { UpdateWeatherDto } from './dto/update-weather.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 
@@ -34,9 +35,9 @@ export class WeatherController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all weather records' })
-  findAll() {
-    return this.weatherService.findAll();
+  @ApiOperation({ summary: 'Get all weather records (paginated)' })
+  findAll(@Query() pagination?: PaginationQueryDto) {
+    return this.weatherService.findAll(pagination?.page, pagination?.limit);
   }
 
   @Get('date/:date')

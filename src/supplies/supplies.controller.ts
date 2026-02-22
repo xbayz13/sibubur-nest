@@ -6,12 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SuppliesService } from './supplies.service';
 import { CreateSupplyDto } from './dto/create-supply.dto';
 import { UpdateSupplyDto } from './dto/update-supply.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('supplies')
@@ -28,9 +30,9 @@ export class SuppliesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all supplies' })
-  findAll() {
-    return this.suppliesService.findAll();
+  @ApiOperation({ summary: 'Get all supplies (paginated)' })
+  findAll(@Query() pagination?: PaginationQueryDto) {
+    return this.suppliesService.findAll(pagination?.page, pagination?.limit);
   }
 
   @Get('low-stock')

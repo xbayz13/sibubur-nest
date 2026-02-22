@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { Employee } from '../entities/employee.entity';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class EmployeesService {
@@ -17,11 +20,15 @@ export class EmployeesService {
     return await this.employeeRepository.save(employee);
   }
 
-  async findAll(): Promise<Employee[]> {
-    return await this.employeeRepository.find({
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Employee>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.employeeRepository.findAndCount({
       relations: ['store'],
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<Employee> {

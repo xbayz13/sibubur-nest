@@ -4,6 +4,9 @@ import { Repository, Between } from 'typeorm';
 import { Expense } from '../entities/expense.entity';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class ExpensesService {
@@ -17,28 +20,32 @@ export class ExpensesService {
     return await this.expenseRepository.save(expense);
   }
 
-  async findAll(storeId?: number, date?: string): Promise<Expense[]> {
+  async findAll(
+    storeId?: number,
+    date?: string,
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Expense>> {
     const where: any = {};
     if (storeId) {
       where.storeId = storeId;
     }
-
-    // Add date filtering
     if (date) {
-      // Parse date string (YYYY-MM-DD) and create date range
-      // Use UTC to avoid timezone issues
       const dateStr = date.trim();
       const start = new Date(dateStr + 'T00:00:00.000Z');
       const end = new Date(dateStr + 'T23:59:59.999Z');
-      
       where.createdAt = Between(start, end);
     }
 
-    return await this.expenseRepository.find({
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.expenseRepository.findAndCount({
       where,
       relations: ['category', 'store'],
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<Expense> {

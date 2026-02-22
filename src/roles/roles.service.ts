@@ -8,6 +8,9 @@ import { Repository, IsNull } from 'typeorm';
 import { Role } from '../entities/role.entity';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class RolesService {
@@ -29,12 +32,16 @@ export class RolesService {
     }
   }
 
-  async findAll(): Promise<Role[]> {
-    return await this.roleRepository.find({
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Role>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.roleRepository.findAndCount({
       where: { deletedAt: IsNull() },
       relations: ['users', 'rolePermissions', 'rolePermissions.permission'],
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<Role> {

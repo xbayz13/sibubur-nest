@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { Attendance, AttendanceStatus } from '../entities/attendance.entity';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class AttendancesService {
@@ -33,7 +36,12 @@ export class AttendancesService {
     return await this.attendanceRepository.save(attendance);
   }
 
-  async findAll(employeeId?: number, date?: string): Promise<Attendance[]> {
+  async findAll(
+    employeeId?: number,
+    date?: string,
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Attendance>> {
     const where: any = {};
     if (employeeId) {
       where.employeeId = employeeId;
@@ -41,12 +49,15 @@ export class AttendancesService {
     if (date) {
       where.date = new Date(date);
     }
-
-    return await this.attendanceRepository.find({
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.attendanceRepository.findAndCount({
       where,
       relations: ['employee'],
       order: { date: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<Attendance> {

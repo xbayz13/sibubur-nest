@@ -6,12 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { EmployeesService } from './employees.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('employees')
@@ -28,9 +30,9 @@ export class EmployeesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all employees' })
-  findAll() {
-    return this.employeesService.findAll();
+  @ApiOperation({ summary: 'Get all employees (paginated)' })
+  findAll(@Query() pagination?: PaginationQueryDto) {
+    return this.employeesService.findAll(pagination?.page, pagination?.limit);
   }
 
   @Get(':id')

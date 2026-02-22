@@ -6,12 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('roles')
@@ -28,9 +30,9 @@ export class RolesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all roles' })
-  findAll() {
-    return this.rolesService.findAll();
+  @ApiOperation({ summary: 'Get all roles (paginated)' })
+  findAll(@Query() pagination?: PaginationQueryDto) {
+    return this.rolesService.findAll(pagination?.page, pagination?.limit);
   }
 
   @Get(':id')

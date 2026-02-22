@@ -10,6 +10,9 @@ import { Transaction, TransactionStatus } from '../entities/transaction.entity';
 import { Order, OrderStatus } from '../entities/order.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { ORDER_PAID, type OrderPaidPayload } from '../events/order.events';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class TransactionsService {
@@ -89,9 +92,14 @@ export class TransactionsService {
   }
 
   /**
-   * Lists transactions optionally filtered by store and date (YYYY-MM-DD).
+   * Lists transactions optionally filtered by store and date (YYYY-MM-DD), with pagination.
    */
-  async findAll(storeId?: number, date?: string): Promise<Transaction[]> {
+  async findAll(
+    storeId?: number,
+    date?: string,
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Transaction>> {
     const where: any = {};
     if (storeId) {
       where.storeId = storeId;
@@ -102,11 +110,15 @@ export class TransactionsService {
       const end = new Date(dateStr + 'T23:59:59.999Z');
       where.createdAt = Between(start, end);
     }
-    return await this.transactionRepository.find({
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.transactionRepository.findAndCount({
       where,
       relations: ['paymentMethod', 'author', 'store', 'order'],
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   /**

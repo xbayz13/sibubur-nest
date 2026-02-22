@@ -6,12 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentMethodsService } from './payment-methods.service';
 import { CreatePaymentMethodDto } from './dto/create-payment-method.dto';
 import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('payment-methods')
@@ -28,9 +30,9 @@ export class PaymentMethodsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all payment methods' })
-  findAll() {
-    return this.paymentMethodsService.findAll();
+  @ApiOperation({ summary: 'Get all payment methods (paginated)' })
+  findAll(@Query() pagination?: PaginationQueryDto) {
+    return this.paymentMethodsService.findAll(pagination?.page, pagination?.limit);
   }
 
   @Get(':id')

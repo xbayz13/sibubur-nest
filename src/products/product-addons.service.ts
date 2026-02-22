@@ -8,6 +8,9 @@ import { Repository, IsNull } from 'typeorm';
 import { ProductAddon } from '../entities/product-addon.entity';
 import { CreateProductAddonDto } from './dto/create-product-addon.dto';
 import { UpdateProductAddonDto } from './dto/update-product-addon.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class ProductAddonsService {
@@ -25,11 +28,15 @@ export class ProductAddonsService {
     }
   }
 
-  async findAll(): Promise<ProductAddon[]> {
-    return await this.addonRepository.find({
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<ProductAddon>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.addonRepository.findAndCount({
       where: { deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<ProductAddon> {

@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('transactions')
@@ -72,14 +73,17 @@ export class TransactionsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all transactions' })
+  @ApiOperation({ summary: 'Get all transactions (paginated)' })
   findAll(
     @Query('storeId') storeId?: string,
     @Query('date') date?: string,
+    @Query() pagination?: PaginationQueryDto,
   ) {
     return this.transactionsService.findAll(
       storeId ? +storeId : undefined,
       date,
+      pagination?.page,
+      pagination?.limit,
     );
   }
 

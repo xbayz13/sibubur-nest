@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AttendancesService } from './attendances.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('attendances')
@@ -29,11 +30,17 @@ export class AttendancesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all attendance records' })
-  findAll(@Query('employeeId') employeeId?: string, @Query('date') date?: string) {
+  @ApiOperation({ summary: 'Get all attendance records (paginated)' })
+  findAll(
+    @Query('employeeId') employeeId?: string,
+    @Query('date') date?: string,
+    @Query() pagination?: PaginationQueryDto,
+  ) {
     return this.attendancesService.findAll(
       employeeId ? +employeeId : undefined,
       date,
+      pagination?.page,
+      pagination?.limit,
     );
   }
 

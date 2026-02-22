@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { Weather } from '../entities/weather.entity';
 import { CreateWeatherDto } from './dto/create-weather.dto';
 import { UpdateWeatherDto } from './dto/update-weather.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class WeatherService {
@@ -17,10 +20,14 @@ export class WeatherService {
     return await this.createOrUpdate(createWeatherDto);
   }
 
-  async findAll(): Promise<Weather[]> {
-    return await this.weatherRepository.find({
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Weather>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.weatherRepository.findAndCount({
       order: { date: 'DESC', createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<Weather> {

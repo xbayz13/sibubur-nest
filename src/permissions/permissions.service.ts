@@ -8,6 +8,9 @@ import { Repository, IsNull } from 'typeorm';
 import { Permission } from '../entities/permission.entity';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class PermissionsService {
@@ -29,7 +32,21 @@ export class PermissionsService {
     }
   }
 
-  async findAll(): Promise<Permission[]> {
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Permission>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.permissionRepository.findAndCount({
+      where: { deletedAt: IsNull() },
+      order: { module: 'ASC', action: 'ASC' },
+      take,
+      skip,
+    });
+    return buildPaginatedResponse(data, total, p, l);
+  }
+
+  /**
+   * Returns all permissions without pagination. For internal use (e.g. Owner role "all permissions").
+   */
+  async findAllUnpaginated(): Promise<Permission[]> {
     return await this.permissionRepository.find({
       where: { deletedAt: IsNull() },
       order: { module: 'ASC', action: 'ASC' },

@@ -8,6 +8,9 @@ import { Repository, IsNull } from 'typeorm';
 import { ProductCategory } from '../entities/product-category.entity';
 import { CreateProductCategoryDto } from './dto/create-product-category.dto';
 import { UpdateProductCategoryDto } from './dto/update-product-category.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class ProductCategoriesService {
@@ -29,12 +32,16 @@ export class ProductCategoriesService {
     }
   }
 
-  async findAll(): Promise<ProductCategory[]> {
-    return await this.categoryRepository.find({
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<ProductCategory>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.categoryRepository.findAndCount({
       where: { deletedAt: IsNull() },
       relations: ['parent', 'children'],
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<ProductCategory> {

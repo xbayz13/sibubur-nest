@@ -11,6 +11,9 @@ import { ProductAddon } from '../entities/product-addon.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { AddProductAddonDto } from './dto/add-product-addon.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class ProductsService {
@@ -32,12 +35,16 @@ export class ProductsService {
     }
   }
 
-  async findAll(): Promise<Product[]> {
-    return await this.productRepository.find({
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Product>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.productRepository.findAndCount({
       where: { deletedAt: IsNull() },
       relations: ['category', 'picture', 'productAddons', 'productAddons.addon'],
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<Product> {

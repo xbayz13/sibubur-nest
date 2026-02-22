@@ -8,6 +8,9 @@ import { Repository, IsNull } from 'typeorm';
 import { ExpenseCategory } from '../entities/expense-category.entity';
 import { CreateExpenseCategoryDto } from './dto/create-expense-category.dto';
 import { UpdateExpenseCategoryDto } from './dto/update-expense-category.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class ExpenseCategoriesService {
@@ -29,11 +32,15 @@ export class ExpenseCategoriesService {
     }
   }
 
-  async findAll(): Promise<ExpenseCategory[]> {
-    return await this.categoryRepository.find({
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<ExpenseCategory>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.categoryRepository.findAndCount({
       where: { deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<ExpenseCategory> {

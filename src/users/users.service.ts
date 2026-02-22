@@ -9,6 +9,9 @@ import * as bcrypt from 'bcryptjs';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class UsersService {
@@ -37,12 +40,16 @@ export class UsersService {
     }
   }
 
-  async findAll(): Promise<User[]> {
-    return await this.userRepository.find({
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<User>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.userRepository.findAndCount({
       where: { deletedAt: IsNull() },
       relations: ['role'],
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<User> {

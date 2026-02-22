@@ -6,6 +6,9 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Media } from '../entities/media.entity';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -80,11 +83,15 @@ export class MediaService {
     return mediaFiles;
   }
 
-  async findAll(): Promise<Media[]> {
-    return await this.mediaRepository.find({
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Media>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.mediaRepository.findAndCount({
       where: { deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<Media> {

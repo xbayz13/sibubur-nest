@@ -6,12 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { StoresService } from './stores.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('stores')
@@ -28,9 +30,9 @@ export class StoresController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all stores' })
-  findAll() {
-    return this.storesService.findAll();
+  @ApiOperation({ summary: 'Get all stores (paginated)' })
+  findAll(@Query() pagination?: PaginationQueryDto) {
+    return this.storesService.findAll(pagination?.page, pagination?.limit);
   }
 
   @Get(':id')

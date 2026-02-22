@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ProductionsService } from './productions.service';
 import { CreateProductionDto } from './dto/create-production.dto';
 import { UpdateProductionDto } from './dto/update-production.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('productions')
@@ -34,14 +35,17 @@ export class ProductionsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all production records' })
+  @ApiOperation({ summary: 'Get all production records (paginated)' })
   findAll(
     @Query('storeId') storeId?: string,
     @Query('date') date?: string,
+    @Query() pagination?: PaginationQueryDto,
   ) {
     return this.productionsService.findAll(
       storeId ? +storeId : undefined,
       date,
+      pagination?.page,
+      pagination?.limit,
     );
   }
 

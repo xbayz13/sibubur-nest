@@ -6,6 +6,9 @@ import { ProductionSupply } from '../entities/production-supply.entity';
 import { Supply } from '../entities/supply.entity';
 import { CreateProductionDto } from './dto/create-production.dto';
 import { UpdateProductionDto } from './dto/update-production.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class ProductionsService {
@@ -69,22 +72,28 @@ export class ProductionsService {
     }
   }
 
-  async findAll(storeId?: number, date?: string): Promise<Production[]> {
+  async findAll(
+    storeId?: number,
+    date?: string,
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Production>> {
     const where: any = {};
     if (storeId) {
       where.storeId = storeId;
     }
-
-    // Add date filtering (productions use date field, not createdAt)
     if (date) {
       where.date = date as any;
     }
-
-    return await this.productionRepository.find({
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.productionRepository.findAndCount({
       where,
       relations: ['store', 'author', 'weather', 'productionSupplies', 'productionSupplies.supply'],
       order: { date: 'DESC', createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<Production> {

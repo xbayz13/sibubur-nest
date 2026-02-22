@@ -8,6 +8,9 @@ import { Repository, IsNull } from 'typeorm';
 import { Store } from '../entities/store.entity';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class StoresService {
@@ -29,11 +32,15 @@ export class StoresService {
     }
   }
 
-  async findAll(): Promise<Store[]> {
-    return await this.storeRepository.find({
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Store>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.storeRepository.findAndCount({
       where: { deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<Store> {

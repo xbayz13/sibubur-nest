@@ -6,12 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ProductAddonsService } from './product-addons.service';
 import { CreateProductAddonDto } from './dto/create-product-addon.dto';
 import { UpdateProductAddonDto } from './dto/update-product-addon.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('product-addons')
@@ -28,9 +30,9 @@ export class ProductAddonsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all product addons' })
-  findAll() {
-    return this.addonsService.findAll();
+  @ApiOperation({ summary: 'Get all product addons (paginated)' })
+  findAll(@Query() pagination?: PaginationQueryDto) {
+    return this.addonsService.findAll(pagination?.page, pagination?.limit);
   }
 
   @Get(':id')

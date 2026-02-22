@@ -4,6 +4,9 @@ import { Repository, IsNull } from 'typeorm';
 import { Supply } from '../entities/supply.entity';
 import { CreateSupplyDto } from './dto/create-supply.dto';
 import { UpdateSupplyDto } from './dto/update-supply.dto';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class SuppliesService {
@@ -17,11 +20,15 @@ export class SuppliesService {
     return await this.supplyRepository.save(supply);
   }
 
-  async findAll(): Promise<Supply[]> {
-    return await this.supplyRepository.find({
+  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Supply>> {
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.supplyRepository.findAndCount({
       where: { deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   async findOne(id: number): Promise<Supply> {
