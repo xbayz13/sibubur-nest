@@ -18,6 +18,7 @@ describe('OrdersService', () => {
 
   const mockOrderRepository = {
     find: jest.fn(),
+    findAndCount: jest.fn(),
     findOne: jest.fn(),
     save: jest.fn(),
   };
@@ -95,18 +96,22 @@ describe('OrdersService', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of orders', async () => {
+    it('should return paginated orders', async () => {
       const mockOrders = [
         { id: 1, orderNumber: 'ORD-20240101-0001', status: OrderStatus.OPEN },
         { id: 2, orderNumber: 'ORD-20240101-0002', status: OrderStatus.PAID },
       ];
 
-      mockOrderRepository.find.mockResolvedValue(mockOrders);
+      mockOrderRepository.findAndCount.mockResolvedValue([mockOrders, 2]);
 
       const result = await service.findAll();
 
-      expect(mockOrderRepository.find).toHaveBeenCalled();
-      expect(result).toEqual(mockOrders);
+      expect(mockOrderRepository.findAndCount).toHaveBeenCalled();
+      expect(result.data).toEqual(mockOrders);
+      expect(result.total).toBe(2);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(50);
+      expect(result.totalPages).toBe(1);
     });
 
     it('should filter by storeId if provided', async () => {
@@ -114,12 +119,13 @@ describe('OrdersService', () => {
         { id: 1, orderNumber: 'ORD-20240101-0001', storeId: 1 },
       ];
 
-      mockOrderRepository.find.mockResolvedValue(mockOrders);
+      mockOrderRepository.findAndCount.mockResolvedValue([mockOrders, 1]);
 
       const result = await service.findAll(1);
 
-      expect(mockOrderRepository.find).toHaveBeenCalled();
-      expect(result).toEqual(mockOrders);
+      expect(mockOrderRepository.findAndCount).toHaveBeenCalled();
+      expect(result.data).toEqual(mockOrders);
+      expect(result.total).toBe(1);
     });
   });
 
@@ -236,7 +242,8 @@ describe('OrdersService', () => {
       mockQueryRunner.manager.save
         .mockResolvedValueOnce(mockOrder)
         .mockResolvedValueOnce([{ id: 1, orderId: 1, productId: 1, quantity: 2, unitPrice: 15000, lineTotal: 30000 }]);
-      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+      // First findOne: collision check in generateOrderNumber (must be null); then findOne(id) returns full order
+      mockOrderRepository.findOne.mockResolvedValueOnce(null).mockResolvedValue(mockOrder);
 
       const result = await service.create(createOrderDto, 1);
 
@@ -297,7 +304,8 @@ describe('OrdersService', () => {
         .mockResolvedValueOnce(mockOrder)
         .mockResolvedValueOnce([{ id: 1, orderId: 1, productId: 1, quantity: 2, unitPrice: 15000, lineTotal: 32000 }])
         .mockResolvedValueOnce(undefined);
-      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+      // First findOne: collision check in generateOrderNumber (must be null); then findOne(id) returns full order
+      mockOrderRepository.findOne.mockResolvedValueOnce(null).mockResolvedValue(mockOrder);
 
       const result = await service.create(createOrderDto, 1);
 

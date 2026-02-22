@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -14,6 +15,9 @@ import { Product } from '../entities/product.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { ORDER_CREATED, type OrderCreatedPayload } from '../events/order.events';
+import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class OrdersService {
@@ -34,12 +38,23 @@ export class OrdersService {
 
   /**
    * Generates a unique order number in format ORD-YYYYMMDD-XXXX.
+   * Retries up to maxAttempts if collision with existing order is detected.
    */
   async generateOrderNumber(): Promise<string> {
-    const date = new Date();
-    const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `ORD-${dateStr}-${random}`;
+    const maxAttempts = 10;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const candidate = `ORD-${dateStr}-${random}`;
+      const existing = await this.orderRepository.findOne({
+        where: { orderNumber: candidate },
+      });
+      if (!existing) return candidate;
+      this.logger.warn(`Order number collision (attempt ${attempt + 1}/${maxAttempts}): ${candidate}`);
+    }
+    throw new InternalServerErrorException(
+      'Could not generate unique order number after maximum attempts',
+    );
   }
 
   /**
@@ -153,9 +168,14 @@ export class OrdersService {
   }
 
   /**
-   * Lists orders optionally filtered by store and date (YYYY-MM-DD).
+   * Lists orders optionally filtered by store and date (YYYY-MM-DD), with pagination.
    */
-  async findAll(storeId?: number, date?: string): Promise<Order[]> {
+  async findAll(
+    storeId?: number,
+    date?: string,
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Order>> {
     const where: any = {};
     if (storeId) {
       where.storeId = storeId;
@@ -167,11 +187,15 @@ export class OrdersService {
       where.createdAt = Between(start, end);
     }
 
-    return await this.orderRepository.find({
+    const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
+    const [data, total] = await this.orderRepository.findAndCount({
       where,
       relations: ['store', 'user', 'orderItems', 'orderItems.product', 'orderItems.orderItemAddons', 'orderItems.orderItemAddons.addon'],
       order: { createdAt: 'DESC' },
+      take,
+      skip,
     });
+    return buildPaginatedResponse(data, total, p, l);
   }
 
   /**
