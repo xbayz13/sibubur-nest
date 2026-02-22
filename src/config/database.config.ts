@@ -36,7 +36,9 @@ export function getDatabaseConfig(): DataSourceOptions {
     ...dbConfig,
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
-    synchronize: false, // Always false in production - use migrations
+    // In development, sync schema from entities so tables exist without running migrations.
+    // In production, keep false and run migrations (InitialSchema is placeholder; generate real migrations for prod).
+    synchronize: process.env.NODE_ENV !== 'production',
     logging: process.env.NODE_ENV === 'development',
   };
 }

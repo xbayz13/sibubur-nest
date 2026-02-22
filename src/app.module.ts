@@ -44,15 +44,7 @@ import { getDatabaseConfig } from './config/database.config';
     }),
     EventEmitterModule.forRoot(),
     TypeOrmModule.forRootAsync({
-      useFactory: () => {
-        const config = getDatabaseConfig();
-        return {
-          ...config,
-          // synchronize should always be false in production
-          // Use migrations instead
-          synchronize: false,
-        };
-      },
+      useFactory: () => getDatabaseConfig(),
     }),
     ThrottlerModule.forRoot([
       {
