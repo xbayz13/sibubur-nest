@@ -14,6 +14,7 @@ describe('StoresService', () => {
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
+    findAndCount: jest.fn(),
     findOne: jest.fn(),
     softDelete: jest.fn(),
   };
@@ -70,21 +71,22 @@ describe('StoresService', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of stores', async () => {
+    it('should return paginated stores', async () => {
       const mockStores = [
         { id: 1, name: 'Store 1', deletedAt: null },
         { id: 2, name: 'Store 2', deletedAt: null },
       ];
 
-      mockRepository.find.mockResolvedValue(mockStores);
+      mockRepository.findAndCount.mockResolvedValue([mockStores, 2]);
 
       const result = await service.findAll();
 
-      expect(mockRepository.find).toHaveBeenCalledWith({
-        where: { deletedAt: IsNull() },
-        order: { createdAt: 'DESC' },
-      });
-      expect(result).toEqual(mockStores);
+      expect(mockRepository.findAndCount).toHaveBeenCalled();
+      expect(result.data).toEqual(mockStores);
+      expect(result.total).toBe(2);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(50);
+      expect(result.totalPages).toBe(1);
     });
   });
 

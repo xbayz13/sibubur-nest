@@ -19,6 +19,7 @@ describe('ProductsService', () => {
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
+    findAndCount: jest.fn(),
     findOne: jest.fn(),
     softDelete: jest.fn(),
   };
@@ -109,22 +110,22 @@ describe('ProductsService', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of products', async () => {
+    it('should return paginated products', async () => {
       const mockProducts = [
         { id: 1, name: 'Product 1', price: 10000, deletedAt: null },
         { id: 2, name: 'Product 2', price: 20000, deletedAt: null },
       ];
 
-      mockProductRepository.find.mockResolvedValue(mockProducts);
+      mockProductRepository.findAndCount.mockResolvedValue([mockProducts, 2]);
 
       const result = await service.findAll();
 
-      expect(mockProductRepository.find).toHaveBeenCalledWith({
-        where: { deletedAt: IsNull() },
-        relations: ['category', 'picture', 'productAddons', 'productAddons.addon'],
-        order: { createdAt: 'DESC' },
-      });
-      expect(result).toEqual(mockProducts);
+      expect(mockProductRepository.findAndCount).toHaveBeenCalled();
+      expect(result.data).toEqual(mockProducts);
+      expect(result.total).toBe(2);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(50);
+      expect(result.totalPages).toBe(1);
     });
   });
 
