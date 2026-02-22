@@ -10,9 +10,13 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable CORS for POS frontend interactions
+  // In production, CORS_ORIGIN must be set (validated in env.validation.ts)
+  // When origin is '*', credentials must be false per CORS spec (credentials: true cannot be used with origin: '*')
+  const corsOrigin = process.env.CORS_ORIGIN || '*';
+  const isWildcard = corsOrigin === '*';
   const corsOptions = {
-    origin: process.env.CORS_ORIGIN || '*',
-    credentials: true,
+    origin: isWildcard ? '*' : corsOrigin.split(',').map((o) => o.trim()),
+    credentials: !isWildcard,
   };
   app.enableCors(corsOptions);
 
@@ -75,4 +79,8 @@ async function bootstrap() {
   logger.log(`Application is running on: http://localhost:${port}`);
   logger.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 }
-bootstrap();
+
+bootstrap().catch((err) => {
+  console.error('Bootstrap failed:', err);
+  process.exit(1);
+});
