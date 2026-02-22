@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
+import { getDatabaseConfig } from '../config/database.config';
 import { Role } from '../entities/role.entity';
 import { Permission } from '../entities/permission.entity';
 import { RolePermission } from '../entities/role-permission.entity';
@@ -44,39 +45,9 @@ async function seedDatabase() {
     await new Promise(resolve => setTimeout(resolve, 10000));
   }
 
-  // Create DataSource connection
-  let dbConfig: any;
-
-  if (process.env.DATABASE_URL) {
-    const url = new URL(process.env.DATABASE_URL);
-    dbConfig = {
-      type: 'postgres',
-      host: url.hostname,
-      port: parseInt(url.port || '5432'),
-      username: url.username,
-      password: url.password || '',
-      database: url.pathname.slice(1),
-    };
-  } else if (process.env.DB_TYPE === 'postgres') {
-    dbConfig = {
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      username: process.env.DB_USERNAME || 'postgres',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'sibubur',
-    };
-  } else {
-    dbConfig = {
-      type: 'sqlite',
-      database: process.env.DB_PATH || 'sibubur.db',
-    };
-  }
-
+  // Use same config as app so schema is synced in development (synchronize: true when NODE_ENV !== 'production')
   const dataSource = new DataSource({
-    ...dbConfig,
-    entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-    synchronize: false, // We're just seeding, not creating schema
+    ...getDatabaseConfig(),
     logging: true,
   });
 
