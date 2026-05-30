@@ -24,6 +24,8 @@ import { envValidationSchema } from './config/env.validation';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { getDatabaseConfig } from './config/database.config';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -68,7 +70,9 @@ import { getDatabaseConfig } from './config/database.config';
     ReportsModule,
     MediaModule,
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

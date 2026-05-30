@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { DataSource } from 'typeorm';
 import { User } from '../src/users/user.entity';
@@ -117,30 +117,29 @@ describe('Auth (e2e)', () => {
     });
   });
 
-  describe('POST /auth/profile', () => {
+  describe('GET /auth/profile', () => {
     it('should return user profile with valid token', () => {
       return request(app.getHttpServer())
-        .post('/auth/profile')
+        .get('/auth/profile')
         .set('Authorization', `Bearer ${authToken}`)
-        .expect(201)
+        .expect(200)
         .expect((res) => {
           expect(res.body).toHaveProperty('username');
-          expect(res.body).toHaveProperty('sub');
+          expect(res.body).toHaveProperty('roleName');
         });
     });
 
     it('should fail without token', () => {
       return request(app.getHttpServer())
-        .post('/auth/profile')
+        .get('/auth/profile')
         .expect(401);
     });
 
     it('should fail with invalid token', () => {
       return request(app.getHttpServer())
-        .post('/auth/profile')
+        .get('/auth/profile')
         .set('Authorization', 'Bearer invalid-token')
         .expect(401);
     });
   });
 });
-

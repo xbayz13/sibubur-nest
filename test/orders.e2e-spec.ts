@@ -1,14 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { User } from '../src/users/user.entity';
 import { Role } from '../src/entities/role.entity';
 import { Store } from '../src/entities/store.entity';
 import { Product } from '../src/entities/product.entity';
 import { ProductCategory } from '../src/entities/product-category.entity';
 import { Order } from '../src/entities/order.entity';
+import { OrderItem } from '../src/entities/order-item.entity';
+import { OrderItemAddon } from '../src/entities/order-item-addon.entity';
 
 describe('Orders (e2e)', () => {
   let app: INestApplication;
@@ -98,9 +100,18 @@ describe('Orders (e2e)', () => {
   });
 
   afterAll(async () => {
-    // Clean up
     if (createdOrderId) {
+      const orderItemAddonRepository = dataSource.getRepository(OrderItemAddon);
+      const orderItemRepository = dataSource.getRepository(OrderItem);
       const orderRepository = dataSource.getRepository(Order);
+
+      const orderItems = await orderItemRepository.find({ where: { orderId: createdOrderId } });
+      const orderItemIds = orderItems.map((item) => item.id);
+
+      if (orderItemIds.length > 0) {
+        await orderItemAddonRepository.delete({ orderItemId: In(orderItemIds) });
+      }
+      await orderItemRepository.delete({ orderId: createdOrderId });
       await orderRepository.delete({ id: createdOrderId });
     }
     await app.close();
@@ -156,13 +167,14 @@ describe('Orders (e2e)', () => {
   });
 
   describe('GET /orders', () => {
-    it('should return array of orders', () => {
+    it('should return paginated orders payload', () => {
       return request(app.getHttpServer())
         .get('/orders')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
         .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
+          expect(Array.isArray(res.body.data)).toBe(true);
+          expect(typeof res.body.total).toBe('number');
         });
     });
   });
@@ -192,4 +204,3 @@ describe('Orders (e2e)', () => {
     });
   });
 });
-

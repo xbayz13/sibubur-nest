@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { DataSource } from 'typeorm';
 import { User } from '../src/users/user.entity';
@@ -107,13 +107,14 @@ describe('Stores (e2e)', () => {
   });
 
   describe('GET /stores', () => {
-    it('should return array of stores', () => {
+    it('should return paginated stores payload', () => {
       return request(app.getHttpServer())
         .get('/stores')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
         .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
+          expect(Array.isArray(res.body.data)).toBe(true);
+          expect(typeof res.body.total).toBe('number');
         });
     });
 
@@ -175,4 +176,3 @@ describe('Stores (e2e)', () => {
     });
   });
 });
-

@@ -48,4 +48,6 @@ lerna-debug.log*
 /uploads
 !/uploads/.gitkeep
 
+# Local agent instructions
+AGENTS.md
 

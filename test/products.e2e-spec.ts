@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { DataSource } from 'typeorm';
 import { User } from '../src/users/user.entity';
@@ -132,13 +132,14 @@ describe('Products (e2e)', () => {
   });
 
   describe('GET /products', () => {
-    it('should return array of products', () => {
+    it('should return paginated products payload', () => {
       return request(app.getHttpServer())
         .get('/products')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
         .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
+          expect(Array.isArray(res.body.data)).toBe(true);
+          expect(typeof res.body.total).toBe('number');
         });
     });
   });
@@ -177,15 +178,6 @@ describe('Products (e2e)', () => {
           expect(res.body).toHaveProperty('name', 'Updated Product Name');
           expect(res.body).toHaveProperty('price', 20000);
         });
-    });
-  });
-
-  describe('DELETE /products/:id', () => {
-    it('should soft delete a product', () => {
-      return request(app.getHttpServer())
-        .delete(`/products/${createdProductId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
     });
   });
 
@@ -258,7 +250,13 @@ describe('Products (e2e)', () => {
   });
 
   describe('DELETE /products/:id/addons/:addonId', () => {
-    it('should remove an addon from a product', () => {
+    it('should remove an addon from a product', async () => {
+      // Ensure addon is attached before removal
+      await request(app.getHttpServer())
+        .post(`/products/${createdProductId}/addons`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ addonId: createdAddonId });
+
       return request(app.getHttpServer())
         .delete(`/products/${createdProductId}/addons/${createdAddonId}`)
         .set('Authorization', `Bearer ${authToken}`)
@@ -281,5 +279,13 @@ describe('Products (e2e)', () => {
         .expect(404);
     });
   });
-});
 
+  describe('DELETE /products/:id', () => {
+    it('should soft delete a product', () => {
+      return request(app.getHttpServer())
+        .delete(`/products/${createdProductId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+    });
+  });
+});

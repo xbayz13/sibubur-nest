@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
@@ -20,13 +20,12 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
-  it('/api should return Swagger JSON', () => {
+  it('GET / responds with hello message', () => {
     return request(app.getHttpServer())
-      .get('/api-json')
+      .get('/')
       .expect(200)
       .expect((res) => {
-        expect(res.body).toHaveProperty('info');
-        expect(res.body.info.title).toBe('SiBubur POS API');
+        expect(res.text).toBe('Hello World!');
       });
   });
 });
