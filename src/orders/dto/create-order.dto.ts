@@ -10,7 +10,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
-class OrderItemAddonDto {
+export class OrderItemAddonDto {
   @ApiProperty({ example: 1 })
   @IsInt()
   addonId: number;
@@ -26,7 +26,7 @@ class OrderItemAddonDto {
   quantity: number;
 }
 
-class OrderItemDto {
+export class OrderItemDto {
   @ApiProperty({ example: 1 })
   @IsInt()
   productId: number;

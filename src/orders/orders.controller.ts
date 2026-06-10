@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
@@ -32,7 +33,7 @@ export class OrdersController {
     @Request() req: { user?: { id?: number; sub?: number } },
   ) {
     if (!req.user) {
-      throw new BadRequestException('User authentication required. Please login again.');
+      throw new UnauthorizedException('User authentication required. Please login again.');
     }
 
     const userId =

@@ -77,7 +77,7 @@ The following API endpoints have E2E tests:
 1. **Auth Endpoints** (`test/auth.e2e-spec.ts`)
    - `POST /auth/signup` - User registration
    - `POST /auth/login` - User authentication
-   - `POST /auth/profile` - Get user profile (protected)
+   - `GET /auth/profile` - Get user profile (protected)
 
 2. **Stores Endpoints** (`test/stores.e2e-spec.ts`)
    - `POST /stores` - Create store (protected)

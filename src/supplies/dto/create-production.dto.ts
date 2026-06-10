@@ -10,7 +10,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
-class ProductionSupplyDto {
+export class ProductionSupplyDto {
   @ApiProperty({ example: 1 })
   @IsInt()
   supplyId: number;

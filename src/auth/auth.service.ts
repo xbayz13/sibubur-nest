@@ -41,7 +41,7 @@ export class AuthService {
       if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Username already exists');
       }
-      throw new InternalServerErrorException('Failed to create user');
+      throw new InternalServerErrorException(`Failed to create user: ${error}`);
     }
   }
 

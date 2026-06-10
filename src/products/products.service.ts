@@ -31,7 +31,7 @@ export class ProductsService {
       const product = this.productRepository.create(createProductDto);
       return await this.productRepository.save(product);
     } catch (error) {
-      throw new ConflictException('Failed to create product');
+      throw new ConflictException(`Failed to create product: ${error.message}`);
     }
   }
 

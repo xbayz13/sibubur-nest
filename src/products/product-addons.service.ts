@@ -24,7 +24,7 @@ export class ProductAddonsService {
       const addon = this.addonRepository.create(createAddonDto);
       return await this.addonRepository.save(addon);
     } catch (error) {
-      throw new ConflictException('Failed to create addon');
+      throw new ConflictException(`Failed to create addon: ${error.message}`);
     }
   }
 
