@@ -7,12 +7,12 @@ import { TransactionsService } from './transactions.service';
 import { TransactionsController } from './transactions.controller';
 import { PaymentMethodsService } from './payment-methods.service';
 import { PaymentMethodsController } from './payment-methods.controller';
+import { GuardsModule } from '../common/guards/guards.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Transaction, PaymentMethod, Order])],
+  imports: [TypeOrmModule.forFeature([Transaction, PaymentMethod, Order]), GuardsModule],
   providers: [TransactionsService, PaymentMethodsService],
   controllers: [TransactionsController, PaymentMethodsController],
   exports: [TransactionsService, PaymentMethodsService],
 })
 export class TransactionsModule {}
-
