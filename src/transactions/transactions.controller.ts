@@ -8,6 +8,7 @@ import {
   UseGuards,
   Request,
   BadRequestException,
+  UnauthorizedException,
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -15,10 +16,11 @@ import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { SuperAdminGuard } from '../common/guards/superadmin.guard';
 
 @ApiTags('transactions')
 @Controller('transactions')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, SuperAdminGuard)
 @ApiBearerAuth()
 export class TransactionsController {
   private readonly logger = new Logger(TransactionsController.name);
@@ -33,7 +35,7 @@ export class TransactionsController {
     
     if (!req.user) {
       this.logger.error('[TransactionsController] req.user is undefined');
-      throw new BadRequestException('User authentication required. Please login again.');
+      throw new UnauthorizedException('User authentication required. Please login again.');
     }
 
     // Extract user ID - should be set by JWT Guard
@@ -93,5 +95,4 @@ export class TransactionsController {
     return this.transactionsService.findOne(+id);
   }
 }
-
 

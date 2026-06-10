@@ -3,7 +3,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
-import { Order } from '../entities/order.entity';
+import { Order, OrderStatus } from '../entities/order.entity';
 import { Transaction, TransactionStatus } from '../entities/transaction.entity';
 import { Production } from '../entities/production.entity';
 import { Expense } from '../entities/expense.entity';
@@ -38,10 +38,8 @@ export class ReportsService {
     const cached = await this.cacheManager.get(cacheKey);
     if (cached) return cached as Awaited<ReturnType<ReportsService['getDailyReport']>>;
 
-    const startDate = new Date(date);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(date);
-    endDate.setHours(23, 59, 59, 999);
+    const startDate = new Date(`${date}T00:00:00.000Z`);
+    const endDate = new Date(`${date}T23:59:59.999Z`);
 
     const where: any = {
       createdAt: Between(startDate, endDate),
@@ -149,8 +147,8 @@ export class ReportsService {
     const cached = await this.cacheManager.get(cacheKey);
     if (cached) return cached as Awaited<ReturnType<ReportsService['getMonthlyReport']>>;
 
-    const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0);
-    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+    const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
     const where: any = {
       createdAt: Between(startDate, endDate),
@@ -164,7 +162,7 @@ export class ReportsService {
         where: { ...where, status: TransactionStatus.PAID },
       }),
       this.expenseRepository.find({ where }),
-      this.orderRepository.find({ where }),
+      this.orderRepository.find({ where: { ...where, status: OrderStatus.PAID } }),
     ]);
 
     const totalRevenue = transactions.reduce(
@@ -268,8 +266,8 @@ export class ReportsService {
     const cached = await this.cacheManager.get(cacheKey);
     if (cached) return cached as Awaited<ReturnType<ReportsService['getYearlyReport']>>;
 
-    const startDate = new Date(year, 0, 1, 0, 0, 0, 0);
-    const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+    const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
     const where: any = {
       createdAt: Between(startDate, endDate),
@@ -574,4 +572,3 @@ export class ReportsService {
     return result;
   }
 }
-

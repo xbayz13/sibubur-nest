@@ -65,7 +65,7 @@ export class OrdersService {
    * @throws BadRequestException if userId invalid.
    * @throws NotFoundException if any product not found or deleted.
    */
-  async create(createOrderDto: CreateOrderDto, userId: number): Promise<Order> {
+   async create(createOrderDto: CreateOrderDto, userId: number): Promise<Order> {
     if (!userId || isNaN(userId) || userId <= 0) {
       throw new BadRequestException(`Invalid user ID: ${userId}. User authentication required.`);
     }
@@ -75,6 +75,8 @@ export class OrdersService {
       where: { id: In(productIds), deletedAt: IsNull() },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
+
+    const TAX_RATE = 0.1; // 10% VAT-like tax; adjust here if business rules change
 
     let subtotalAmount = 0;
     const itemPayloads: { product: Product; quantity: number; addons: { addonId: number; price: number; quantity: number }[]; lineTotal: number }[] = [];
@@ -98,8 +100,8 @@ export class OrdersService {
       });
     }
 
-    const taxAmount = 0;
-    const totalAmount = subtotalAmount;
+    const taxAmount = Number((subtotalAmount * TAX_RATE).toFixed(2));
+    const totalAmount = Number((subtotalAmount + taxAmount).toFixed(2));
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -261,4 +263,3 @@ export class OrdersService {
     return await this.orderRepository.save(order);
   }
 }
-

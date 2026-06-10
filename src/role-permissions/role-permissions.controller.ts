@@ -11,10 +11,11 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RolePermissionsService } from './role-permissions.service';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { SuperAdminGuard } from '../common/guards/superadmin.guard';
 
 @ApiTags('role-permissions')
 @Controller('roles/:roleId/permissions')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, SuperAdminGuard)
 @ApiBearerAuth()
 export class RolePermissionsController {
   constructor(
@@ -57,5 +58,4 @@ export class RolePermissionsController {
     return this.rolePermissionsService.removePermission(+roleId, +permissionId);
   }
 }
-
 

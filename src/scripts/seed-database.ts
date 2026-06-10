@@ -177,6 +177,7 @@ async function seedDatabase() {
     ];
 
     const savedUsers: User[] = [];
+    const savedCashiers: User[] = [];
     for (const userData of users) {
       const hashedPassword = await bcrypt.hash(userData.password, 10);
       const user = dataSource.getRepository(User).create({
@@ -228,6 +229,7 @@ async function seedDatabase() {
       });
       const savedCashier = await dataSource.getRepository(User).save(cashierUser);
       savedUsers.push(savedCashier);
+      savedCashiers.push(savedCashier);
       console.log(`  ✓ Created cashier: ${savedCashier.username} (${savedCashier.name}) for store: ${store.name}`);
     }
     console.log('');
@@ -454,6 +456,7 @@ async function seedDatabase() {
         storeId: prodData.storeId,
         authorId: prodData.authorId,
         weatherId: prodData.weatherId,
+        porridgeAmount: 80,
       });
       const savedProduction = await dataSource.getRepository(Production).save(production);
       
@@ -516,8 +519,8 @@ async function seedDatabase() {
           }
         }
       }
-      const tax = subtotal * 0.1;
-      const total = subtotal + tax;
+      const tax = Number((subtotal * 0.1).toFixed(2));
+      const total = Number((subtotal + tax).toFixed(2));
 
       const orderNumber = `ORD-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
       
@@ -659,7 +662,11 @@ async function seedDatabase() {
     console.log('  • SuperAdmin: username=superadmin, password=superadmin123 (BYPASSES ALL AUTHORIZATION)');
     console.log('  • Owner: username=owner, password=owner123');
     console.log('  • Manager: username=manager1, password=manager123');
-    console.log('  • Cashier: username=cashier1, password=cashier123');
+    if (savedCashiers.length > 0) {
+      console.log(`  • Cashier: username=${savedCashiers[0].username}, password=cashier123`);
+    } else {
+      console.log('  • Cashier: username=cashier_<store_slug>, password=cashier123');
+    }
     console.log('\n🚀 You can now start the application and test the full flow!');
     console.log('⚠️  SuperAdmin account bypasses all permission checks!');
     console.log('='.repeat(60));
@@ -674,4 +681,3 @@ async function seedDatabase() {
 
 // Run the seed
 seedDatabase();
-

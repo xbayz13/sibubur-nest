@@ -28,11 +28,25 @@ export class TransactionsService {
   /**
    * Generates a unique transaction number in format TXN-YYYYMMDD-XXXX.
    */
+  /**
+   * Generates a unique transaction number in format TXN-YYYYMMDD-XXXX.
+   * Retries up to maxAttempts to avoid collisions.
+   */
   async generateTransactionNumber(): Promise<string> {
-    const date = new Date();
-    const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `TXN-${dateStr}-${random}`;
+    const maxAttempts = 10;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const candidate = `TXN-${dateStr}-${random}`;
+
+      const existing = await this.transactionRepository.findOne({ where: { transactionNumber: candidate } });
+      if (!existing) return candidate;
+
+      // Soft warn and retry
+    }
+
+    throw new BadRequestException('Could not generate unique transaction number. Please retry.');
   }
 
   /**
@@ -135,4 +149,3 @@ export class TransactionsService {
     return transaction;
   }
 }
-

@@ -232,8 +232,8 @@ describe('OrdersService', () => {
         orderNumber: 'ORD-20240101-0001',
         ...createOrderDto,
         subtotalAmount: 30000,
-        taxAmount: 0,
-        totalAmount: 30000,
+        taxAmount: 3000,
+        totalAmount: 33000,
         status: OrderStatus.OPEN,
       };
 
@@ -252,14 +252,14 @@ describe('OrdersService', () => {
         Order,
         expect.objectContaining({
           subtotalAmount: 30000,
-          taxAmount: 0,
-          totalAmount: 30000,
+          taxAmount: 3000,
+          totalAmount: 33000,
         })
       );
       expect(result).toBeDefined();
       expect(result.subtotalAmount).toBe(30000);
-      expect(result.taxAmount).toBe(0);
-      expect(result.totalAmount).toBe(30000);
+      expect(result.taxAmount).toBe(3000);
+      expect(result.totalAmount).toBe(33000);
     });
 
     it('should create an order with addons without tax', async () => {
@@ -293,8 +293,8 @@ describe('OrdersService', () => {
         orderNumber: 'ORD-20240101-0001',
         ...createOrderDto,
         subtotalAmount: 32000,
-        taxAmount: 0,
-        totalAmount: 32000,
+        taxAmount: 3200,
+        totalAmount: 35200,
         status: OrderStatus.OPEN,
       };
 
@@ -311,9 +311,8 @@ describe('OrdersService', () => {
 
       expect(result).toBeDefined();
       expect(result.subtotalAmount).toBe(32000);
-      expect(result.taxAmount).toBe(0);
-      expect(result.totalAmount).toBe(32000);
-      expect(result.totalAmount).toBe(result.subtotalAmount);
+      expect(result.taxAmount).toBe(3200);
+      expect(result.totalAmount).toBe(35200);
     });
 
     it('should throw NotFoundException if product not found', async () => {
@@ -351,4 +350,3 @@ describe('OrdersService', () => {
     });
   });
 });
-

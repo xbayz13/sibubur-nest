@@ -9,6 +9,8 @@ import {
   Query,
   UseGuards,
   Request,
+  UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ProductionsService } from './productions.service';
@@ -27,11 +29,17 @@ export class ProductionsController {
   @Post()
   @ApiOperation({ summary: 'Create a new production record' })
   create(@Body() createProductionDto: CreateProductionDto, @Request() req) {
-    const userId = req.user?.id || req.user?.sub;
-    if (!userId) {
-      throw new Error('User ID not found in request');
+    const rawUserId = req.user?.id ?? req.user?.sub;
+    if (!rawUserId) {
+      throw new UnauthorizedException('User authentication required. Please login again.');
     }
-    return this.productionsService.create(createProductionDto, typeof userId === 'string' ? parseInt(userId, 10) : userId);
+
+    const userId = typeof rawUserId === 'string' ? parseInt(rawUserId, 10) : Number(rawUserId);
+    if (!userId || Number.isNaN(userId) || userId <= 0) {
+      throw new BadRequestException('Invalid user ID. Please login again.');
+    }
+
+    return this.productionsService.create(createProductionDto, userId);
   }
 
   @Get()
@@ -67,5 +75,4 @@ export class ProductionsController {
     return this.productionsService.remove(+id);
   }
 }
-
 
