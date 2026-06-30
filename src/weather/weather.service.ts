@@ -40,9 +40,12 @@ export class WeatherService {
     return weather;
   }
 
-  async findByDate(date: string): Promise<Weather | null> {
+  async findByDate(date: string, locationCode?: string): Promise<Weather | null> {
     return await this.weatherRepository.findOne({
-      where: { date: date as any },
+      where: {
+        date: date as any,
+        ...(locationCode ? { locationCode } : {}),
+      },
     });
   }
 
@@ -147,7 +150,7 @@ export class WeatherService {
    * Create or update weather - prevents duplicates
    */
   async createOrUpdate(createWeatherDto: CreateWeatherDto): Promise<Weather> {
-    const existing = await this.findByDate(createWeatherDto.date);
+    const existing = await this.findByDate(createWeatherDto.date, createWeatherDto.locationCode);
     
     if (existing) {
       // Update existing record
@@ -176,5 +179,3 @@ export class WeatherService {
     }
   }
 }
-
-

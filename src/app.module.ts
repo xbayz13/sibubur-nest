@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
@@ -44,14 +45,15 @@ import { AppService } from './app.service';
         ttl: config.get<number>('CACHE_TTL_REPORT') ?? 120000,
       }),
     }),
+    ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: () => getDatabaseConfig(),
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: parseInt(process.env.THROTTLE_TTL || '60') * 1000, // Convert to milliseconds
-        limit: parseInt(process.env.THROTTLE_LIMIT || '100'),
+        ttl: parseInt(process.env.THROTTLE_TTL || '60', 10), // seconds (Nest Throttler expects seconds)
+        limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
       },
     ]),
     AuthModule,

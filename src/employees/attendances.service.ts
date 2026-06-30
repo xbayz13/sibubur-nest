@@ -8,6 +8,12 @@ import type { PaginatedResponse } from '../common/interfaces/paginated-response.
 import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
 import { getPaginationParams } from '../common/dto/pagination-query.dto';
 
+function normalizeUtcDateOnly(value: string | Date): Date {
+  const iso = typeof value === 'string' ? value : value.toISOString();
+  const dateOnly = iso.split('T')[0];
+  return new Date(`${dateOnly}T00:00:00.000Z`);
+}
+
 @Injectable()
 export class AttendancesService {
   constructor(
@@ -17,7 +23,7 @@ export class AttendancesService {
 
   async create(createAttendanceDto: CreateAttendanceDto): Promise<Attendance> {
     // Check if attendance already exists for this employee on this date
-    const dateObj = new Date(createAttendanceDto.date);
+    const dateObj = normalizeUtcDateOnly(createAttendanceDto.date);
     const existing = await this.attendanceRepository.findOne({
       where: {
         employeeId: createAttendanceDto.employeeId,
@@ -42,12 +48,12 @@ export class AttendancesService {
     page?: number,
     limit?: number,
   ): Promise<PaginatedResponse<Attendance>> {
-    const where: any = {};
-    if (employeeId) {
+    const where: Record<string, unknown> = {};
+    if (employeeId !== undefined) {
       where.employeeId = employeeId;
     }
     if (date) {
-      where.date = new Date(date);
+      where.date = normalizeUtcDateOnly(date);
     }
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.attendanceRepository.findAndCount({
@@ -82,4 +88,3 @@ export class AttendancesService {
     await this.attendanceRepository.delete(id);
   }
 }
-
