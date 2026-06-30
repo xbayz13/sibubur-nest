@@ -8,7 +8,6 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
-  OneToOne,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Role } from '../entities/role.entity';
@@ -42,7 +41,7 @@ export class User {
   @Column({ name: 'store_id', nullable: true })
   storeId: number | null;
 
-  @OneToOne(() => Store, { nullable: true })
+  @ManyToOne(() => Store, { nullable: true })
   @JoinColumn({ name: 'store_id' })
   store: Store | null;
 

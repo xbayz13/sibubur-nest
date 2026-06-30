@@ -45,13 +45,13 @@ export class AddPerformanceIndexes1733000000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX "IDX_weathers_date"`);
-    await queryRunner.query(`DROP INDEX "IDX_attendances_employee_date"`);
-    await queryRunner.query(`DROP INDEX "IDX_productions_store_date"`);
-    await queryRunner.query(`DROP INDEX "IDX_expenses_store_created"`);
-    await queryRunner.query(`DROP INDEX "IDX_transactions_status"`);
-    await queryRunner.query(`DROP INDEX "IDX_transactions_store_created"`);
-    await queryRunner.query(`DROP INDEX "IDX_orders_status"`);
-    await queryRunner.query(`DROP INDEX "IDX_orders_store_created"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_weathers_date"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_attendances_employee_date"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_productions_store_date"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_expenses_store_created"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_transactions_status"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_transactions_store_created"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_orders_status"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_orders_store_created"`);
   }
 }

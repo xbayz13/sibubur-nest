@@ -5,10 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Unique,
 } from 'typeorm';
 import { Production } from './production.entity';
 
 @Entity('weathers')
+@Unique(['date', 'locationCode'])
 export class Weather {
   @PrimaryGeneratedColumn()
   id: number;
@@ -34,5 +36,4 @@ export class Weather {
   @OneToMany(() => Production, (production) => production.weather)
   productions: Production[];
 }
-
 

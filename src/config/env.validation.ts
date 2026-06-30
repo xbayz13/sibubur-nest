@@ -66,6 +66,10 @@ export const envValidationSchema = Joi.object({
   // Cache (reports TTL in milliseconds)
   CACHE_TTL_REPORT: numberFromEnv.default(120000),
 
+  // Weather
+  WEATHER_ADM4: Joi.string().optional(),
+  KEEP_WEATHER_DAYS: numberFromEnv.default(90),
+
   // Logging: in production, request log only when LOG_LEVEL=debug or sampled (LOG_SAMPLE_RATE 0-1)
   LOG_LEVEL: Joi.string().valid('debug', 'info', 'warn', 'error').default('info'),
   LOG_SAMPLE_RATE: Joi.alternatives()
@@ -80,4 +84,3 @@ export const envValidationSchema = Joi.object({
     )
     .default(0.01),
 });
-

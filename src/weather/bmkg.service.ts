@@ -64,12 +64,12 @@ export class BMKGService {
    * @param adm4Code - Kode wilayah administrasi tingkat IV (contoh: 31.71.03.1001 untuk Kemayoran)
    * @returns Weather forecast data from BMKG
    */
-  async getWeatherForecast(adm4Code: string): Promise<BMKGWeatherData> {
+  async getWeatherForecast(adm4Code: string, localDatetime: string = new Date().toISOString()): Promise<BMKGWeatherData> {
     try {
       const response = await axios.get<BMKGWeatherData>(
         `${this.BMKG_API_BASE_URL}/prakiraan-cuaca`,
         {
-          params: { adm4: adm4Code },
+          params: { adm4: adm4Code, local_datetime: localDatetime },
           timeout: 10000, // 10 seconds timeout
         },
       );
@@ -127,7 +127,7 @@ export class BMKGService {
    * @param bmkgData - Raw data from BMKG API
    * @returns Simplified weather data
    */
-  transformBMKGData(bmkgData: BMKGWeatherData) {
+  transformBMKGData(bmkgData: BMKGWeatherData, options?: { includeRaw?: boolean }) {
     if (!bmkgData.data || bmkgData.data.length === 0) {
       return null;
     }
@@ -140,7 +140,18 @@ export class BMKGService {
     // Get current/latest forecast
     const currentForecast = todayForecast[todayForecast.length - 1] || todayForecast[0];
 
-    return {
+    const deriveCondition = (forecastArray: any[], fallback?: string) => {
+      if (forecastArray && forecastArray.length > 0) return forecastArray[0].weather_desc;
+      return fallback || null;
+    };
+
+    const derivedCondition = deriveCondition(todayForecast, currentForecast?.weather_desc);
+    const derivedDescription = deriveCondition(
+      todayForecast,
+      currentForecast?.weather_desc_en || currentForecast?.weather_desc,
+    );
+
+    const transformed = {
       location: {
         province: bmkgData.lokasi.provinsi,
         city: bmkgData.lokasi.kotkab,
@@ -195,8 +206,65 @@ export class BMKGService {
           timeIndex: f.time_index,
         })),
       },
-      raw: bmkgData, // Include raw data for reference
+      condition: derivedCondition,
+      description: derivedDescription,
     };
+
+    if (options?.includeRaw) {
+      return { ...transformed, raw: bmkgData };
+    }
+
+    return transformed;
+  }
+
+  transformBMKGDataForDay(
+    bmkgData: BMKGWeatherData,
+    dayIndex: 0 | 1 | 2,
+    options?: { includeRaw?: boolean },
+  ) {
+    if (!bmkgData.data || bmkgData.data.length === 0) {
+      return null;
+    }
+
+    const firstData = bmkgData.data[0];
+    const dayForecast = firstData.cuaca[dayIndex] || [];
+
+    const condition = dayForecast[0]?.weather_desc || null;
+    const description = dayForecast[0]?.weather_desc_en || condition || null;
+
+    const transformed = {
+      location: {
+        province: bmkgData.lokasi.provinsi,
+        city: bmkgData.lokasi.kotkab,
+        district: bmkgData.lokasi.kecamatan,
+        village: bmkgData.lokasi.desa,
+        code: bmkgData.lokasi.adm4,
+        coordinates: {
+          longitude: bmkgData.lokasi.lon,
+          latitude: bmkgData.lokasi.lat,
+        },
+        timezone: bmkgData.lokasi.timezone,
+      },
+      current: dayIndex === 0 ? undefined : null,
+      forecasts: {
+        day: dayForecast.map((f: any) => ({
+          temperature: f.t,
+          condition: f.weather_desc,
+          humidity: f.hu,
+          windSpeed: f.ws,
+          precipitation: f.tp,
+          datetime: f.local_datetime,
+          timeIndex: f.time_index,
+        })),
+      },
+      condition,
+      description,
+    } as any;
+
+    if (options?.includeRaw) {
+      return { ...transformed, raw: bmkgData };
+    }
+
+    return transformed;
   }
 }
-
