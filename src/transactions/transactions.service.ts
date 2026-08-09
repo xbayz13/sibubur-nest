@@ -27,9 +27,6 @@ export class TransactionsService {
 
   /**
    * Generates a unique transaction number in format TXN-YYYYMMDD-XXXX.
-   */
-  /**
-   * Generates a unique transaction number in format TXN-YYYYMMDD-XXXX.
    * Retries up to maxAttempts to avoid collisions.
    */
   async generateTransactionNumber(): Promise<string> {
