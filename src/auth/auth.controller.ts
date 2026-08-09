@@ -12,7 +12,6 @@ import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
-import { SignupDto } from './dto/signup.dto';
 import { UsersService } from '../users/users.service';
 import { PermissionsService } from '../permissions/permissions.service';
 
@@ -24,18 +23,6 @@ export class AuthController {
     private usersService: UsersService,
     private permissionsService: PermissionsService,
   ) {}
-
-  @Post('signup')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiBody({ type: SignupDto })
-  async signup(@Body() signupDto: SignupDto) {
-    return this.authService.signup(
-      signupDto.username,
-      signupDto.password,
-      signupDto.name,
-      signupDto.roleId,
-    );
-  }
 
   @Post('login')
   @ApiOperation({ summary: 'Login user' })
@@ -55,16 +42,25 @@ export class AuthController {
   @Get('profile')
   @ApiOperation({ summary: 'Get user profile (protected)' })
   async getProfile(
-    @Request() req: { user: { id: number; username: string; roleId: number; roleName?: string; [key: string]: any } },
+    @Request()
+    req: {
+      user: {
+        id: number;
+        username: string;
+        roleId: number;
+        roleName?: string;
+        [key: string]: any;
+      };
+    },
   ) {
     const userId = req.user.id;
-    
+
     try {
       const user = await this.usersService.findOne(userId);
-      
+
       // Extract permissions from role
       const permissions: string[] = [];
-      
+
       // Owner and SuperAdmin have all permissions
       if (user.role?.name === 'SuperAdmin') {
         permissions.push('superadmin:*');
@@ -78,7 +74,8 @@ export class AuthController {
             }
           });
         } else {
-          const allPermissions = await this.permissionsService.findAllUnpaginated();
+          const allPermissions =
+            await this.permissionsService.findAllUnpaginated();
           permissions.push(...allPermissions.map((p) => p.slug));
         }
       } else {
@@ -105,7 +102,9 @@ export class AuthController {
       // If user not found, the token is invalid (user was deleted)
       // Return 401 Unauthorized instead of 404
       if (error instanceof NotFoundException) {
-        throw new UnauthorizedException('User account no longer exists. Please log in again.');
+        throw new UnauthorizedException(
+          'User account no longer exists. Please log in again.',
+        );
       }
       throw error;
     }

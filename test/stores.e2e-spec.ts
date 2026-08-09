@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
+import * as bcrypt from 'bcryptjs';
 import { AppModule } from '../src/app.module';
 import { DataSource } from 'typeorm';
 import { User } from '../src/users/user.entity';
@@ -26,38 +27,37 @@ describe('Stores (e2e)', () => {
 
     dataSource = moduleFixture.get<DataSource>(DataSource);
 
-    // Create test role
+    // Create test role (SuperAdmin bypasses permission checks)
     const roleRepository = dataSource.getRepository(Role);
-    testRole = await roleRepository.findOne({ where: { name: 'Test Role' } });
+    testRole = await roleRepository.findOne({ where: { name: 'SuperAdmin' } });
     if (!testRole) {
-      testRole = roleRepository.create({ name: 'Test Role' });
+      testRole = roleRepository.create({ name: 'SuperAdmin' });
       testRole = await roleRepository.save(testRole);
     }
 
     // Create test user and get token
     const userRepository = dataSource.getRepository(User);
-    testUser = await userRepository.findOne({ where: { username: 'testuser' } });
+    testUser = await userRepository.findOne({
+      where: { username: 'testuser' },
+    });
     if (!testUser) {
-      // Signup to get token
-      const signupResponse = await request(app.getHttpServer())
-        .post('/auth/signup')
-        .send({
+      await userRepository.save(
+        userRepository.create({
           username: 'testuser',
-          password: 'password123',
+          passwordHash: await bcrypt.hash('password123', 10),
           name: 'Test User',
           roleId: testRole.id,
-        });
-      authToken = signupResponse.body.access_token;
-    } else {
-      // Login to get token
-      const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          username: 'testuser',
-          password: 'password123',
-        });
-      authToken = loginResponse.body.access_token;
+        }),
+      );
     }
+    // Login to get token
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        username: 'testuser',
+        password: 'password123',
+      });
+    authToken = loginResponse.body.access_token;
   });
 
   afterAll(async () => {
@@ -119,9 +119,7 @@ describe('Stores (e2e)', () => {
     });
 
     it('should fail without authentication', () => {
-      return request(app.getHttpServer())
-        .get('/stores')
-        .expect(401);
+      return request(app.getHttpServer()).get('/stores').expect(401);
     });
   });
 
