@@ -37,33 +37,52 @@ export class TransactionsService {
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const random = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, '0');
       const candidate = `TXN-${dateStr}-${random}`;
 
-      const existing = await this.transactionRepository.findOne({ where: { transactionNumber: candidate } });
+      const existing = await this.transactionRepository.findOne({
+        where: { transactionNumber: candidate },
+      });
       if (!existing) return candidate;
 
       // Soft warn and retry
     }
 
-    throw new BadRequestException('Could not generate unique transaction number. Please retry.');
+    throw new BadRequestException(
+      'Could not generate unique transaction number. Please retry.',
+    );
   }
 
   /**
    * Creates a paid transaction and marks the order as paid. Emits ORDER_PAID event.
    * Wrapped in a database transaction for consistency.
    */
-  async create(createTransactionDto: CreateTransactionDto, authorId: number): Promise<Transaction> {
+  async create(
+    createTransactionDto: CreateTransactionDto,
+    authorId: number,
+  ): Promise<Transaction> {
     const order = await this.orderRepository.findOne({
       where: { id: createTransactionDto.orderId },
     });
 
     if (!order) {
-      throw new NotFoundException(`Order with ID ${createTransactionDto.orderId} not found`);
+      throw new NotFoundException(
+        `Order with ID ${createTransactionDto.orderId} not found`,
+      );
     }
 
     if (order.status === OrderStatus.PAID) {
       throw new BadRequestException('Order is already paid');
+    }
+
+    // Server-side integrity check: the amount paid must cover the order total.
+    // Overpayment is allowed (cash with change); underpayment is rejected.
+    if (Number(createTransactionDto.amount) < Number(order.totalAmount)) {
+      throw new BadRequestException(
+        `Amount is less than order total: expected at least ${order.totalAmount}`,
+      );
     }
 
     const transactionNumber = await this.generateTransactionNumber();
@@ -81,7 +100,10 @@ export class TransactionsService {
         storeId: createTransactionDto.storeId,
         orderId: createTransactionDto.orderId,
       });
-      const savedTransaction = await queryRunner.manager.save(Transaction, transaction);
+      const savedTransaction = await queryRunner.manager.save(
+        Transaction,
+        transaction,
+      );
 
       order.status = OrderStatus.PAID;
       await queryRunner.manager.save(Order, order);

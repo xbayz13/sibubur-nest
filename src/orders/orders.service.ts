@@ -12,9 +12,13 @@ import { Order, OrderStatus } from '../entities/order.entity';
 import { OrderItem } from '../entities/order-item.entity';
 import { OrderItemAddon } from '../entities/order-item-addon.entity';
 import { Product } from '../entities/product.entity';
+import { ProductAddonProduct } from '../entities/product-addon-product.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
-import { ORDER_CREATED, type OrderCreatedPayload } from '../events/order.events';
+import {
+  ORDER_CREATED,
+  type OrderCreatedPayload,
+} from '../events/order.events';
 import type { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 import { buildPaginatedResponse } from '../common/interfaces/paginated-response.interface';
 import { getPaginationParams } from '../common/dto/pagination-query.dto';
@@ -32,6 +36,8 @@ export class OrdersService {
     private orderItemAddonRepository: Repository<OrderItemAddon>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    @InjectRepository(ProductAddonProduct)
+    private addonRepository: Repository<ProductAddonProduct>,
     private dataSource: DataSource,
     private eventEmitter: EventEmitter2,
   ) {}
@@ -44,13 +50,17 @@ export class OrdersService {
     const maxAttempts = 10;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const random = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, '0');
       const candidate = `ORD-${dateStr}-${random}`;
       const existing = await this.orderRepository.findOne({
         where: { orderNumber: candidate },
       });
       if (!existing) return candidate;
-      this.logger.warn(`Order number collision (attempt ${attempt + 1}/${maxAttempts}): ${candidate}`);
+      this.logger.warn(
+        `Order number collision (attempt ${attempt + 1}/${maxAttempts}): ${candidate}`,
+      );
     }
     throw new InternalServerErrorException(
       'Could not generate unique order number after maximum attempts',
@@ -65,37 +75,80 @@ export class OrdersService {
    * @throws BadRequestException if userId invalid.
    * @throws NotFoundException if any product not found or deleted.
    */
-   async create(createOrderDto: CreateOrderDto, userId: number): Promise<Order> {
+  async create(createOrderDto: CreateOrderDto, userId: number): Promise<Order> {
     if (!userId || isNaN(userId) || userId <= 0) {
-      throw new BadRequestException(`Invalid user ID: ${userId}. User authentication required.`);
+      throw new BadRequestException(
+        `Invalid user ID: ${userId}. User authentication required.`,
+      );
     }
 
-    const productIds = [...new Set(createOrderDto.items.map((i) => i.productId))];
+    const productIds = [
+      ...new Set(createOrderDto.items.map((i) => i.productId)),
+    ];
     const products = await this.productRepository.find({
       where: { id: In(productIds), deletedAt: IsNull() },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
 
+    // Resolve addon prices from the DB (product_addon_products), never from client input.
+    const addonPairs = createOrderDto.items.flatMap((i) =>
+      (i.addons ?? []).map((a) => ({
+        productId: i.productId,
+        addonId: a.addonId,
+      })),
+    );
+    const addonOverrides = addonPairs.length
+      ? await this.addonRepository.find({
+          where: addonPairs,
+          relations: ['addon'],
+        })
+      : [];
+    const addonPriceMap = new Map(
+      addonOverrides.map((pap) => [
+        `${pap.productId}:${pap.addonId}`,
+        pap.addonPriceOverride ?? pap.addon?.price,
+      ]),
+    );
+
     const TAX_RATE = 0.1; // 10% VAT-like tax; adjust here if business rules change
 
     let subtotalAmount = 0;
-    const itemPayloads: { product: Product; quantity: number; addons: { addonId: number; price: number; quantity: number }[]; lineTotal: number }[] = [];
+    const itemPayloads: {
+      product: Product;
+      quantity: number;
+      addons: { addonId: number; price: number; quantity: number }[];
+      lineTotal: number;
+    }[] = [];
 
     for (const itemDto of createOrderDto.items) {
       const product = productMap.get(itemDto.productId);
       if (!product) {
-        throw new NotFoundException(`Product with ID ${itemDto.productId} not found or has been deleted`);
+        throw new NotFoundException(
+          `Product with ID ${itemDto.productId} not found or has been deleted`,
+        );
       }
       let lineTotal = Number(product.price) * itemDto.quantity;
-      const addons = itemDto.addons ?? [];
-      for (const a of addons) {
-        lineTotal += a.price * a.quantity;
+      const addons: { addonId: number; price: number; quantity: number }[] = [];
+      for (const a of itemDto.addons ?? []) {
+        const dbPrice = addonPriceMap.get(`${itemDto.productId}:${a.addonId}`);
+        if (dbPrice === undefined || dbPrice === null) {
+          throw new NotFoundException(
+            `Addon with ID ${a.addonId} is not available for product ${itemDto.productId}`,
+          );
+        }
+        const price = Number(dbPrice) * a.quantity;
+        lineTotal += price;
+        addons.push({
+          addonId: a.addonId,
+          price: Number(dbPrice),
+          quantity: a.quantity,
+        });
       }
       subtotalAmount += lineTotal;
       itemPayloads.push({
         product,
         quantity: itemDto.quantity,
-        addons: addons.map((a) => ({ addonId: a.addonId, price: a.price, quantity: a.quantity })),
+        addons,
         lineTotal,
       });
     }
@@ -130,12 +183,15 @@ export class OrdersService {
           lineTotal: p.lineTotal,
         }),
       );
-      const savedOrderItems = (await queryRunner.manager.save(OrderItem, orderItemsToSave)) as OrderItem[];
+      const savedOrderItems = await queryRunner.manager.save(
+        OrderItem,
+        orderItemsToSave,
+      );
 
       const addonsToSave: OrderItemAddon[] = [];
       for (let i = 0; i < itemPayloads.length; i++) {
-        const orderItemId = savedOrderItems[i]!.id;
-        for (const a of itemPayloads[i]!.addons) {
+        const orderItemId = savedOrderItems[i].id;
+        for (const a of itemPayloads[i].addons) {
           addonsToSave.push(
             queryRunner.manager.create(OrderItemAddon, {
               orderItemId,
@@ -192,7 +248,14 @@ export class OrdersService {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.orderRepository.findAndCount({
       where,
-      relations: ['store', 'user', 'orderItems', 'orderItems.product', 'orderItems.orderItemAddons', 'orderItems.orderItemAddons.addon'],
+      relations: [
+        'store',
+        'user',
+        'orderItems',
+        'orderItems.product',
+        'orderItems.orderItemAddons',
+        'orderItems.orderItemAddons.addon',
+      ],
       order: { createdAt: 'DESC' },
       take,
       skip,
@@ -206,7 +269,14 @@ export class OrdersService {
   async findOne(id: number): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { id },
-      relations: ['store', 'user', 'orderItems', 'orderItems.product', 'orderItems.orderItemAddons', 'orderItems.orderItemAddons.addon'],
+      relations: [
+        'store',
+        'user',
+        'orderItems',
+        'orderItems.product',
+        'orderItems.orderItemAddons',
+        'orderItems.orderItemAddons.addon',
+      ],
     });
     if (!order) {
       throw new NotFoundException(`Order with ID ${id} not found`);
@@ -220,7 +290,14 @@ export class OrdersService {
   async findByOrderNumber(orderNumber: string): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { orderNumber },
-      relations: ['store', 'user', 'orderItems', 'orderItems.product', 'orderItems.orderItemAddons', 'orderItems.orderItemAddons.addon'],
+      relations: [
+        'store',
+        'user',
+        'orderItems',
+        'orderItems.product',
+        'orderItems.orderItemAddons',
+        'orderItems.orderItemAddons.addon',
+      ],
     });
     if (!order) {
       throw new NotFoundException(`Order with number ${orderNumber} not found`);

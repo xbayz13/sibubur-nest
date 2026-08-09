@@ -8,6 +8,7 @@ import { Order, OrderStatus } from '../entities/order.entity';
 import { OrderItem } from '../entities/order-item.entity';
 import { OrderItemAddon } from '../entities/order-item-addon.entity';
 import { Product } from '../entities/product.entity';
+import { ProductAddonProduct } from '../entities/product-addon-product.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 
 describe('OrdersService', () => {
@@ -24,6 +25,10 @@ describe('OrdersService', () => {
   };
 
   const mockProductRepository = {
+    find: jest.fn(),
+  };
+
+  const mockAddonRepository = {
     find: jest.fn(),
   };
 
@@ -63,6 +68,10 @@ describe('OrdersService', () => {
         {
           provide: getRepositoryToken(Product),
           useValue: mockProductRepository,
+        },
+        {
+          provide: getRepositoryToken(ProductAddonProduct),
+          useValue: mockAddonRepository,
         },
         {
           provide: DataSource,
@@ -238,12 +247,25 @@ describe('OrdersService', () => {
       };
 
       mockProductRepository.find.mockResolvedValue([mockProduct]);
-      mockQueryRunner.manager.create.mockImplementation((entity, dto) => ({ ...dto }));
+      mockQueryRunner.manager.create.mockImplementation((entity, dto) => ({
+        ...dto,
+      }));
       mockQueryRunner.manager.save
         .mockResolvedValueOnce(mockOrder)
-        .mockResolvedValueOnce([{ id: 1, orderId: 1, productId: 1, quantity: 2, unitPrice: 15000, lineTotal: 30000 }]);
+        .mockResolvedValueOnce([
+          {
+            id: 1,
+            orderId: 1,
+            productId: 1,
+            quantity: 2,
+            unitPrice: 15000,
+            lineTotal: 30000,
+          },
+        ]);
       // First findOne: collision check in generateOrderNumber (must be null); then findOne(id) returns full order
-      mockOrderRepository.findOne.mockResolvedValueOnce(null).mockResolvedValue(mockOrder);
+      mockOrderRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue(mockOrder);
 
       const result = await service.create(createOrderDto, 1);
 
@@ -254,7 +276,7 @@ describe('OrdersService', () => {
           subtotalAmount: 30000,
           taxAmount: 3000,
           totalAmount: 33000,
-        })
+        }),
       );
       expect(result).toBeDefined();
       expect(result.subtotalAmount).toBe(30000);
@@ -288,6 +310,15 @@ describe('OrdersService', () => {
         deletedAt: null,
       };
 
+      const mockAddonRows = [
+        {
+          productId: 1,
+          addonId: 1,
+          addonPriceOverride: null,
+          addon: { id: 1, name: 'Test Addon', price: 2000 },
+        },
+      ];
+
       const mockOrder = {
         id: 1,
         orderNumber: 'ORD-20240101-0001',
@@ -299,13 +330,27 @@ describe('OrdersService', () => {
       };
 
       mockProductRepository.find.mockResolvedValue([mockProduct]);
-      mockQueryRunner.manager.create.mockImplementation((entity, dto) => ({ ...dto }));
+      mockAddonRepository.find.mockResolvedValue(mockAddonRows);
+      mockQueryRunner.manager.create.mockImplementation((entity, dto) => ({
+        ...dto,
+      }));
       mockQueryRunner.manager.save
         .mockResolvedValueOnce(mockOrder)
-        .mockResolvedValueOnce([{ id: 1, orderId: 1, productId: 1, quantity: 2, unitPrice: 15000, lineTotal: 32000 }])
+        .mockResolvedValueOnce([
+          {
+            id: 1,
+            orderId: 1,
+            productId: 1,
+            quantity: 2,
+            unitPrice: 15000,
+            lineTotal: 32000,
+          },
+        ])
         .mockResolvedValueOnce(undefined);
       // First findOne: collision check in generateOrderNumber (must be null); then findOne(id) returns full order
-      mockOrderRepository.findOne.mockResolvedValueOnce(null).mockResolvedValue(mockOrder);
+      mockOrderRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue(mockOrder);
 
       const result = await service.create(createOrderDto, 1);
 
@@ -313,6 +358,80 @@ describe('OrdersService', () => {
       expect(result.subtotalAmount).toBe(32000);
       expect(result.taxAmount).toBe(3200);
       expect(result.totalAmount).toBe(35200);
+    });
+
+    it('should use DB addon price, not the client-supplied price', async () => {
+      const createOrderDto: CreateOrderDto = {
+        storeId: 1,
+        items: [
+          {
+            productId: 1,
+            quantity: 1,
+            addons: [
+              {
+                addonId: 1,
+                // Client tries to underprice the addon
+                price: 1,
+                quantity: 1,
+              },
+            ],
+          },
+        ],
+      };
+
+      const mockProduct = {
+        id: 1,
+        name: 'Test Product',
+        price: 15000,
+        deletedAt: null,
+      };
+
+      const mockAddonRows = [
+        {
+          productId: 1,
+          addonId: 1,
+          addonPriceOverride: 2000,
+          addon: { id: 1, name: 'Test Addon', price: 9999 },
+        },
+      ];
+
+      const mockOrder = {
+        id: 1,
+        orderNumber: 'ORD-20240101-0001',
+        ...createOrderDto,
+        subtotalAmount: 17000,
+        taxAmount: 1700,
+        totalAmount: 18700,
+        status: OrderStatus.OPEN,
+      };
+
+      mockProductRepository.find.mockResolvedValue([mockProduct]);
+      mockAddonRepository.find.mockResolvedValue(mockAddonRows);
+      mockQueryRunner.manager.create.mockImplementation((entity, dto) => ({
+        ...dto,
+      }));
+      mockQueryRunner.manager.save
+        .mockResolvedValueOnce(mockOrder)
+        .mockResolvedValueOnce([
+          {
+            id: 1,
+            orderId: 1,
+            productId: 1,
+            quantity: 1,
+            unitPrice: 15000,
+            lineTotal: 17000,
+          },
+        ])
+        .mockResolvedValueOnce(undefined);
+      mockOrderRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue(mockOrder);
+
+      const result = await service.create(createOrderDto, 1);
+
+      // Client price (1) is ignored; DB override (2000) is used.
+      expect(result.subtotalAmount).toBe(17000);
+      expect(result.totalAmount).toBe(18700);
     });
 
     it('should throw NotFoundException if product not found', async () => {
@@ -329,7 +448,7 @@ describe('OrdersService', () => {
       mockProductRepository.find.mockResolvedValue([]);
 
       await expect(service.create(createOrderDto, 1)).rejects.toThrow(
-        NotFoundException
+        NotFoundException,
       );
     });
 
@@ -345,7 +464,7 @@ describe('OrdersService', () => {
       };
 
       await expect(service.create(createOrderDto, 0)).rejects.toThrow(
-        BadRequestException
+        BadRequestException,
       );
     });
   });
