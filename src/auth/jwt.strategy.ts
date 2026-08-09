@@ -7,7 +7,7 @@ import { User } from '../users/user.entity'; // Or fetch from DB if needed
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private configService: ConfigService) {
-    const secret = configService.get<string>('JWT_SECRET') || 'your-secret-key-change-in-production';
+    const secret = configService.getOrThrow<string>('JWT_SECRET');
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -23,8 +23,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     storeId?: number | null;
   }): Promise<User & { roleName?: string; storeId?: number | null }> {
     // Ensure id is always a number
-    const userId = typeof payload.sub === 'string' ? parseInt(payload.sub, 10) : Number(payload.sub);
-    
+    const userId =
+      typeof payload.sub === 'string'
+        ? parseInt(payload.sub, 10)
+        : Number(payload.sub);
+
     if (isNaN(userId) || userId <= 0) {
       throw new Error(`Invalid user ID in JWT payload: ${payload.sub}`);
     }
@@ -39,7 +42,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // Ensure id property exists and is valid
     if (!user.id || user.id <= 0) {
-      throw new Error(`Failed to set user ID from payload. sub: ${payload.sub}, userId: ${userId}`);
+      throw new Error(
+        `Failed to set user ID from payload. sub: ${payload.sub}, userId: ${userId}`,
+      );
     }
 
     return Promise.resolve(user);
