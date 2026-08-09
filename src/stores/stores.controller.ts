@@ -15,10 +15,13 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('stores')
 @Controller('stores')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('stores.read')
 @ApiBearerAuth()
 export class StoresController {
   constructor(private readonly storesService: StoresService) {}
@@ -53,5 +56,3 @@ export class StoresController {
     return this.storesService.remove(+id);
   }
 }
-
-

@@ -15,11 +15,13 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { SuperAdminGuard } from '../common/guards/superadmin.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('roles')
 @Controller('roles')
-@UseGuards(JwtAuthGuard, SuperAdminGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('roles.read')
 @ApiBearerAuth()
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
@@ -54,4 +56,3 @@ export class RolesController {
     return this.rolesService.remove(+id);
   }
 }
-

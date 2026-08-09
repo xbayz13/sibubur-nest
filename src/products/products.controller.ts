@@ -16,10 +16,13 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { AddProductAddonDto } from './dto/add-product-addon.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('products')
 @Controller('products')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('products.read')
 @ApiBearerAuth()
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
@@ -56,7 +59,10 @@ export class ProductsController {
 
   @Post(':id/addons')
   @ApiOperation({ summary: 'Add an addon to a product' })
-  addAddon(@Param('id') id: string, @Body() addProductAddonDto: AddProductAddonDto) {
+  addAddon(
+    @Param('id') id: string,
+    @Body() addProductAddonDto: AddProductAddonDto,
+  ) {
     return this.productsService.addAddon(+id, addProductAddonDto);
   }
 
@@ -66,5 +72,3 @@ export class ProductsController {
     return this.productsService.removeAddon(+id, +addonId);
   }
 }
-
-

@@ -15,10 +15,13 @@ import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('expenses')
 @Controller('expenses')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('expenses.read')
 @ApiBearerAuth()
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
@@ -62,5 +65,3 @@ export class ExpensesController {
     return this.expensesService.remove(+id);
   }
 }
-
-

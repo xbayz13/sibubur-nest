@@ -15,10 +15,13 @@ import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { AttendanceQueryDto } from './dto/attendance-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('attendances')
 @Controller('attendances')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('attendances.read')
 @ApiBearerAuth()
 export class AttendancesController {
   constructor(private readonly attendancesService: AttendancesService) {}
@@ -48,7 +51,10 @@ export class AttendancesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update an attendance record' })
-  update(@Param('id') id: string, @Body() updateAttendanceDto: UpdateAttendanceDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateAttendanceDto: UpdateAttendanceDto,
+  ) {
     return this.attendancesService.update(+id, updateAttendanceDto);
   }
 
@@ -58,4 +64,3 @@ export class AttendancesController {
     return this.attendancesService.remove(+id);
   }
 }
-

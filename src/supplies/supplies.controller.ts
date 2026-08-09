@@ -15,10 +15,13 @@ import { CreateSupplyDto } from './dto/create-supply.dto';
 import { UpdateSupplyDto } from './dto/update-supply.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('supplies')
 @Controller('supplies')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('supplies.read')
 @ApiBearerAuth()
 export class SuppliesController {
   constructor(private readonly suppliesService: SuppliesService) {}
@@ -54,7 +57,9 @@ export class SuppliesController {
   }
 
   @Patch(':id/restock')
-  @ApiOperation({ summary: 'Restock a supply (add quantity to existing stock)' })
+  @ApiOperation({
+    summary: 'Restock a supply (add quantity to existing stock)',
+  })
   restock(@Param('id') id: string, @Body() body: { quantity: number }) {
     return this.suppliesService.restock(+id, body.quantity);
   }
@@ -65,5 +70,3 @@ export class SuppliesController {
     return this.suppliesService.remove(+id);
   }
 }
-
-

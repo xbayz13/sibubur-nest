@@ -18,10 +18,13 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('orders')
 @Controller('orders')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('orders.read')
 @ApiBearerAuth()
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
@@ -33,7 +36,9 @@ export class OrdersController {
     @Request() req: { user?: { id?: number; sub?: number } },
   ) {
     if (!req.user) {
-      throw new UnauthorizedException('User authentication required. Please login again.');
+      throw new UnauthorizedException(
+        'User authentication required. Please login again.',
+      );
     }
 
     const userId =
@@ -44,7 +49,9 @@ export class OrdersController {
           : undefined;
 
     if (userId === undefined || isNaN(userId) || userId <= 0) {
-      throw new BadRequestException('Invalid user ID. User authentication required. Please login again.');
+      throw new BadRequestException(
+        'Invalid user ID. User authentication required. Please login again.',
+      );
     }
 
     return this.ordersService.create(createOrderDto, userId);
@@ -95,5 +102,3 @@ export class OrdersController {
     return this.ordersService.markAsPaid(+id);
   }
 }
-
-

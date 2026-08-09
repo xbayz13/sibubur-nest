@@ -15,11 +15,13 @@ import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { SuperAdminGuard } from '../common/guards/superadmin.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('permissions')
 @Controller('permissions')
-@UseGuards(JwtAuthGuard, SuperAdminGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('permissions.read')
 @ApiBearerAuth()
 export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
@@ -63,4 +65,3 @@ export class PermissionsController {
     return this.permissionsService.remove(+id);
   }
 }
-

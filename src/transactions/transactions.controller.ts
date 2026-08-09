@@ -16,11 +16,13 @@ import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { SuperAdminGuard } from '../common/guards/superadmin.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('transactions')
 @Controller('transactions')
-@UseGuards(JwtAuthGuard, SuperAdminGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('transactions.read')
 @ApiBearerAuth()
 export class TransactionsController {
   private readonly logger = new Logger(TransactionsController.name);
@@ -29,49 +31,51 @@ export class TransactionsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new transaction' })
-  async create(@Body() createTransactionDto: CreateTransactionDto, @Request() req: any) {
-    this.logger.log(`[TransactionsController] Request received`);
-    this.logger.log(`[TransactionsController] req.user: ${JSON.stringify(req.user)}`);
-    
+  async create(
+    @Body() createTransactionDto: CreateTransactionDto,
+    @Request() req: any,
+  ) {
     if (!req.user) {
-      this.logger.error('[TransactionsController] req.user is undefined');
-      throw new UnauthorizedException('User authentication required. Please login again.');
+      throw new UnauthorizedException(
+        'User authentication required. Please login again.',
+      );
     }
 
     // Extract user ID - should be set by JWT Guard
     let userId: number | undefined = undefined;
-    
+
     // Try multiple ways to get the user ID (in order of preference)
     if (req.user?.id) {
-      userId = typeof req.user.id === 'string' ? parseInt(req.user.id, 10) : Number(req.user.id);
+      userId =
+        typeof req.user.id === 'string'
+          ? parseInt(req.user.id, 10)
+          : Number(req.user.id);
     } else if (req.user?.sub) {
-      userId = typeof req.user.sub === 'string' ? parseInt(req.user.sub, 10) : Number(req.user.sub);
-    } else if ((req.user as any)?.userId) {
-      userId = typeof (req.user as any).userId === 'string' 
-        ? parseInt((req.user as any).userId, 10) 
-        : Number((req.user as any).userId);
+      userId =
+        typeof req.user.sub === 'string'
+          ? parseInt(req.user.sub, 10)
+          : Number(req.user.sub);
+    } else if (req.user?.userId) {
+      userId =
+        typeof req.user.userId === 'string'
+          ? parseInt(req.user.userId, 10)
+          : Number(req.user.userId);
     }
-    
-    this.logger.log(`[TransactionsController] Extracted userId: ${userId}`);
-    
+
     // Validate userId
-    if (userId === undefined || userId === null || isNaN(userId) || userId <= 0) {
-      this.logger.error(`[TransactionsController] Invalid user ID. req.user: ${JSON.stringify(req.user)}`);
-      throw new BadRequestException(`Invalid user ID: ${userId}. User authentication required.`);
+    if (
+      userId === undefined ||
+      userId === null ||
+      isNaN(userId) ||
+      userId <= 0
+    ) {
+      throw new BadRequestException(
+        `Invalid user ID: ${userId}. User authentication required.`,
+      );
     }
-    
-    // Ensure it's a number
+
     const numericUserId = Number(userId);
-    this.logger.log(`[TransactionsController] Processing transaction with userId: ${numericUserId}`);
-    
-    try {
-      const result = await this.transactionsService.create(createTransactionDto, numericUserId);
-      this.logger.log(`[TransactionsController] Transaction created successfully: ${result.id}`);
-      return result;
-    } catch (error: any) {
-      this.logger.error(`[TransactionsController] Error creating transaction: ${error.message}`);
-      throw error;
-    }
+    return this.transactionsService.create(createTransactionDto, numericUserId);
   }
 
   @Get()
@@ -95,4 +99,3 @@ export class TransactionsController {
     return this.transactionsService.findOne(+id);
   }
 }
-

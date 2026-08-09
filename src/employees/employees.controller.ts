@@ -15,10 +15,13 @@ import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('employees')
 @Controller('employees')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('employees.read')
 @ApiBearerAuth()
 export class EmployeesController {
   constructor(private readonly employeesService: EmployeesService) {}
@@ -43,7 +46,10 @@ export class EmployeesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update an employee' })
-  update(@Param('id') id: string, @Body() updateEmployeeDto: UpdateEmployeeDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateEmployeeDto: UpdateEmployeeDto,
+  ) {
     return this.employeesService.update(+id, updateEmployeeDto);
   }
 
@@ -53,5 +59,3 @@ export class EmployeesController {
     return this.employeesService.remove(+id);
   }
 }
-
-

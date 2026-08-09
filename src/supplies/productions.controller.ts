@@ -18,10 +18,13 @@ import { CreateProductionDto } from './dto/create-production.dto';
 import { UpdateProductionDto } from './dto/update-production.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('productions')
 @Controller('productions')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('productions.read')
 @ApiBearerAuth()
 export class ProductionsController {
   constructor(private readonly productionsService: ProductionsService) {}
@@ -31,10 +34,15 @@ export class ProductionsController {
   create(@Body() createProductionDto: CreateProductionDto, @Request() req) {
     const rawUserId = req.user?.id ?? req.user?.sub;
     if (!rawUserId) {
-      throw new UnauthorizedException('User authentication required. Please login again.');
+      throw new UnauthorizedException(
+        'User authentication required. Please login again.',
+      );
     }
 
-    const userId = typeof rawUserId === 'string' ? parseInt(rawUserId, 10) : Number(rawUserId);
+    const userId =
+      typeof rawUserId === 'string'
+        ? parseInt(rawUserId, 10)
+        : Number(rawUserId);
     if (!userId || Number.isNaN(userId) || userId <= 0) {
       throw new BadRequestException('Invalid user ID. Please login again.');
     }
@@ -65,7 +73,10 @@ export class ProductionsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a production record' })
-  update(@Param('id') id: string, @Body() updateProductionDto: UpdateProductionDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateProductionDto: UpdateProductionDto,
+  ) {
     return this.productionsService.update(+id, updateProductionDto);
   }
 
@@ -75,4 +86,3 @@ export class ProductionsController {
     return this.productionsService.remove(+id);
   }
 }
-

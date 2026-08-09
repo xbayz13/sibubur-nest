@@ -15,15 +15,16 @@ import { CreateProductCategoryDto } from './dto/create-product-category.dto';
 import { UpdateProductCategoryDto } from './dto/update-product-category.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('product-categories')
 @Controller('product-categories')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('product-categories.read')
 @ApiBearerAuth()
 export class ProductCategoriesController {
-  constructor(
-    private readonly categoriesService: ProductCategoriesService,
-  ) {}
+  constructor(private readonly categoriesService: ProductCategoriesService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new product category' })
@@ -58,5 +59,3 @@ export class ProductCategoriesController {
     return this.categoriesService.remove(+id);
   }
 }
-
-

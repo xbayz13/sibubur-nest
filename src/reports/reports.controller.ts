@@ -10,6 +10,8 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 function parseOptionalInt(value: string | undefined): number | undefined {
   if (value === undefined || value === '') return undefined;
@@ -20,7 +22,8 @@ function parseOptionalInt(value: string | undefined): number | undefined {
 
 @ApiTags('reports')
 @Controller('reports')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('reports.read')
 @ApiBearerAuth()
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
@@ -66,7 +69,9 @@ export class ReportsController {
   }
 
   @Get('recommendations/:date')
-  @ApiOperation({ summary: 'Get production recommendations for a specific date' })
+  @ApiOperation({
+    summary: 'Get production recommendations for a specific date',
+  })
   getProductionRecommendations(
     @Param('date') date: string,
     @Query('storeId') storeId?: string,
@@ -76,9 +81,10 @@ export class ReportsController {
     if (storeId !== undefined && storeId !== '' && storeIdNum === undefined) {
       throw new BadRequestException('storeId must be a valid integer');
     }
-    const lookback = lookbackDays !== undefined && lookbackDays !== ''
-      ? parseOptionalInt(lookbackDays) ?? 30
-      : 30;
+    const lookback =
+      lookbackDays !== undefined && lookbackDays !== ''
+        ? (parseOptionalInt(lookbackDays) ?? 30)
+        : 30;
     if (lookback <= 0) {
       throw new BadRequestException('lookbackDays must be a positive integer');
     }
@@ -89,4 +95,3 @@ export class ReportsController {
     );
   }
 }
-

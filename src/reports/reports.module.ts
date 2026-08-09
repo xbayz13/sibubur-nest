@@ -8,6 +8,7 @@ import { Attendance } from '../entities/attendance.entity';
 import { Weather } from '../entities/weather.entity';
 import { ReportsService } from './reports.service';
 import { ReportsController } from './reports.controller';
+import { GuardsModule } from '../common/guards/guards.module';
 
 @Module({
   imports: [
@@ -19,11 +20,10 @@ import { ReportsController } from './reports.controller';
       Attendance,
       Weather,
     ]),
+    GuardsModule,
   ],
   providers: [ReportsService],
   controllers: [ReportsController],
   exports: [ReportsService],
 })
 export class ReportsModule {}
-
-

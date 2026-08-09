@@ -15,10 +15,13 @@ import { CreatePaymentMethodDto } from './dto/create-payment-method.dto';
 import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('payment-methods')
 @Controller('payment-methods')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('payment-methods.read')
 @ApiBearerAuth()
 export class PaymentMethodsController {
   constructor(private readonly paymentMethodsService: PaymentMethodsService) {}
@@ -32,7 +35,10 @@ export class PaymentMethodsController {
   @Get()
   @ApiOperation({ summary: 'Get all payment methods (paginated)' })
   findAll(@Query() pagination?: PaginationQueryDto) {
-    return this.paymentMethodsService.findAll(pagination?.page, pagination?.limit);
+    return this.paymentMethodsService.findAll(
+      pagination?.page,
+      pagination?.limit,
+    );
   }
 
   @Get(':id')
@@ -43,7 +49,10 @@ export class PaymentMethodsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a payment method' })
-  update(@Param('id') id: string, @Body() updatePaymentMethodDto: UpdatePaymentMethodDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updatePaymentMethodDto: UpdatePaymentMethodDto,
+  ) {
     return this.paymentMethodsService.update(+id, updatePaymentMethodDto);
   }
 
@@ -53,5 +62,3 @@ export class PaymentMethodsController {
     return this.paymentMethodsService.remove(+id);
   }
 }
-
-

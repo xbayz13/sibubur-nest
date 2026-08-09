@@ -15,15 +15,16 @@ import { CreateExpenseCategoryDto } from './dto/create-expense-category.dto';
 import { UpdateExpenseCategoryDto } from './dto/update-expense-category.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionGuard } from '../common/guards/permission.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @ApiTags('expense-categories')
 @Controller('expense-categories')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@RequirePermission('expense-categories.read')
 @ApiBearerAuth()
 export class ExpenseCategoriesController {
-  constructor(
-    private readonly categoriesService: ExpenseCategoriesService,
-  ) {}
+  constructor(private readonly categoriesService: ExpenseCategoriesService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new expense category' })
@@ -58,5 +59,3 @@ export class ExpenseCategoriesController {
     return this.categoriesService.remove(+id);
   }
 }
-
-

@@ -11,6 +11,7 @@ import { ProductCategoriesService } from './product-categories.service';
 import { ProductCategoriesController } from './product-categories.controller';
 import { ProductAddonsService } from './product-addons.service';
 import { ProductAddonsController } from './product-addons.controller';
+import { GuardsModule } from '../common/guards/guards.module';
 
 @Module({
   imports: [
@@ -21,12 +22,9 @@ import { ProductAddonsController } from './product-addons.controller';
       ProductAddonProduct,
       Media,
     ]),
+    GuardsModule,
   ],
-  providers: [
-    ProductsService,
-    ProductCategoriesService,
-    ProductAddonsService,
-  ],
+  providers: [ProductsService, ProductCategoriesService, ProductAddonsService],
   controllers: [
     ProductsController,
     ProductCategoriesController,
