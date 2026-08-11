@@ -1,3 +1,6 @@
+// MUST be the first import: ensures `globalThis.crypto` exists before
+// @nestjs/typeorm evaluates its utils (fixes "crypto is not defined" crash).
+import './crypto-polyfill';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
