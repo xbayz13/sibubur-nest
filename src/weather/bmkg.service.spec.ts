@@ -116,7 +116,10 @@ describe('BMKGService', () => {
       expect(mockedAxios.get).toHaveBeenCalledWith(
         'https://api.bmkg.go.id/publik/prakiraan-cuaca',
         {
-          params: { adm4: '35.02.17.1015' },
+          params: {
+            adm4: '35.02.17.1015',
+            local_datetime: expect.any(String),
+          },
           timeout: 10000,
         },
       );
@@ -304,7 +307,9 @@ describe('BMKGService', () => {
     };
 
     it('should transform BMKG data correctly', () => {
-      const result = service.transformBMKGData(mockBMKGData);
+      const result = service.transformBMKGData(mockBMKGData, {
+        includeRaw: true,
+      });
 
       expect(result).toBeDefined();
       expect(result?.location).toEqual({
