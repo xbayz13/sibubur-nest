@@ -20,7 +20,10 @@ export class SuppliesService {
     return await this.supplyRepository.save(supply);
   }
 
-  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Supply>> {
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Supply>> {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.supplyRepository.findAndCount({
       where: { deletedAt: IsNull() },
@@ -66,4 +69,3 @@ export class SuppliesService {
     return await this.supplyRepository.save(supply);
   }
 }
-

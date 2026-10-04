@@ -75,7 +75,9 @@ async function bootstrap() {
 
   // Only enable Swagger in non-production environments
   if (process.env.NODE_ENV !== 'production') {
-    logger.log(`Swagger documentation available at http://localhost:${port}/api`);
+    logger.log(
+      `Swagger documentation available at http://localhost:${port}/api`,
+    );
   }
 
   await app.listen(port);

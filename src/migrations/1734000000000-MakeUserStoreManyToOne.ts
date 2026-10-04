@@ -1,23 +1,36 @@
-import { MigrationInterface, QueryRunner, TableIndex, TableUnique } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  TableIndex,
+  TableUnique,
+} from 'typeorm';
 
 export class MakeUserStoreManyToOne1734000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('users');
 
-    const uniqueConstraint = table?.uniques.find((uq) => uq.columnNames.includes('store_id'));
+    const uniqueConstraint = table?.uniques.find((uq) =>
+      uq.columnNames.includes('store_id'),
+    );
     if (uniqueConstraint) {
       await queryRunner.dropUniqueConstraint('users', uniqueConstraint);
     }
 
     const uniqueIndex = table?.indices.find(
-      (idx) => idx.isUnique && idx.columnNames.length === 1 && idx.columnNames[0] === 'store_id',
+      (idx) =>
+        idx.isUnique &&
+        idx.columnNames.length === 1 &&
+        idx.columnNames[0] === 'store_id',
     );
     if (uniqueIndex) {
       await queryRunner.dropIndex('users', uniqueIndex);
     }
 
     const existingIndex = table?.indices.find(
-      (idx) => !idx.isUnique && idx.columnNames.length === 1 && idx.columnNames[0] === 'store_id',
+      (idx) =>
+        !idx.isUnique &&
+        idx.columnNames.length === 1 &&
+        idx.columnNames[0] === 'store_id',
     );
     if (!existingIndex) {
       await queryRunner.createIndex(
@@ -34,13 +47,17 @@ export class MakeUserStoreManyToOne1734000000000 implements MigrationInterface {
     const table = await queryRunner.getTable('users');
 
     const existingIndex = table?.indices.find(
-      (idx) => idx.name === 'IDX_users_store_id' || idx.columnNames.includes('store_id'),
+      (idx) =>
+        idx.name === 'IDX_users_store_id' ||
+        idx.columnNames.includes('store_id'),
     );
     if (existingIndex) {
       await queryRunner.dropIndex('users', existingIndex);
     }
 
-    const uniqueConstraint = table?.uniques.find((uq) => uq.columnNames.includes('store_id'));
+    const uniqueConstraint = table?.uniques.find((uq) =>
+      uq.columnNames.includes('store_id'),
+    );
     if (!uniqueConstraint) {
       await queryRunner.createUniqueConstraint(
         'users',

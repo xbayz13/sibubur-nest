@@ -33,5 +33,3 @@ export class Attendance {
   })
   status: AttendanceStatus;
 }
-
-

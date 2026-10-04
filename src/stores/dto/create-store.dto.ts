@@ -7,5 +7,3 @@ export class CreateStoreDto {
   @IsNotEmpty()
   name: string;
 }
-
-

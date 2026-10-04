@@ -32,7 +32,10 @@ export class UsersService {
       });
       return await this.userRepository.save(user);
     } catch (error: unknown) {
-      const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+      const code =
+        error && typeof error === 'object' && 'code' in error
+          ? (error as { code: string }).code
+          : undefined;
       if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Username already exists');
       }
@@ -40,7 +43,10 @@ export class UsersService {
     }
   }
 
-  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<User>> {
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<User>> {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.userRepository.findAndCount({
       where: { deletedAt: IsNull() },
@@ -55,7 +61,11 @@ export class UsersService {
   async findOne(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['role', 'role.rolePermissions', 'role.rolePermissions.permission'],
+      relations: [
+        'role',
+        'role.rolePermissions',
+        'role.rolePermissions.permission',
+      ],
     });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -65,9 +75,9 @@ export class UsersService {
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
-    
+
     const updateData: any = { ...updateUserDto };
-    
+
     if (updateUserDto.password) {
       updateData.passwordHash = await bcrypt.hash(updateUserDto.password, 10);
       delete updateData.password;
@@ -79,7 +89,7 @@ export class UsersService {
     }
 
     Object.assign(user, updateData);
-    
+
     return await this.userRepository.save(user);
   }
 
@@ -88,4 +98,3 @@ export class UsersService {
     await this.userRepository.softDelete(id);
   }
 }
-

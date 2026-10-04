@@ -7,5 +7,3 @@ export class CreatePaymentMethodDto {
   @IsNotEmpty()
   name: string;
 }
-
-

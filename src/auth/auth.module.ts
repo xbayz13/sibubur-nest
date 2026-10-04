@@ -20,7 +20,9 @@ import { PermissionsModule } from '../permissions/permissions.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const secret = configService.get<string>('JWT_SECRET') || 'your-secret-key-change-in-production';
+        const secret =
+          configService.get<string>('JWT_SECRET') ||
+          'your-secret-key-change-in-production';
         return {
           secret,
           signOptions: { expiresIn: '1h' },

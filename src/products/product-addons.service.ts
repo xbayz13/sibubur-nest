@@ -28,7 +28,10 @@ export class ProductAddonsService {
     }
   }
 
-  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<ProductAddon>> {
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<ProductAddon>> {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.addonRepository.findAndCount({
       where: { deletedAt: IsNull() },
@@ -49,7 +52,10 @@ export class ProductAddonsService {
     return addon;
   }
 
-  async update(id: number, updateAddonDto: UpdateProductAddonDto): Promise<ProductAddon> {
+  async update(
+    id: number,
+    updateAddonDto: UpdateProductAddonDto,
+  ): Promise<ProductAddon> {
     const addon = await this.findOne(id);
     Object.assign(addon, updateAddonDto);
     return await this.addonRepository.save(addon);
@@ -60,4 +66,3 @@ export class ProductAddonsService {
     await this.addonRepository.softDelete(id);
   }
 }
-

@@ -1,10 +1,4 @@
-import {
-  Entity,
-  Column,
-  PrimaryColumn,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, Column, PrimaryColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { OrderItem } from './order-item.entity';
 import { ProductAddon } from './product-addon.entity';
 
@@ -30,5 +24,3 @@ export class OrderItemAddon {
   @Column()
   quantity: number;
 }
-
-

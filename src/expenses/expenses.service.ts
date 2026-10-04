@@ -59,7 +59,10 @@ export class ExpensesService {
     return expense;
   }
 
-  async update(id: number, updateExpenseDto: UpdateExpenseDto): Promise<Expense> {
+  async update(
+    id: number,
+    updateExpenseDto: UpdateExpenseDto,
+  ): Promise<Expense> {
     const expense = await this.findOne(id);
     Object.assign(expense, updateExpenseDto);
     return await this.expenseRepository.save(expense);
@@ -70,5 +73,3 @@ export class ExpensesService {
     await this.expenseRepository.delete(id);
   }
 }
-
-

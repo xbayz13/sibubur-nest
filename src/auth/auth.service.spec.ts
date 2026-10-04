@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { ConflictException, InternalServerErrorException } from '@nestjs/common';
+import {
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { AuthService } from './auth.service';
 import { User } from '../users/user.entity';
@@ -172,7 +175,10 @@ describe('AuthService', () => {
         where: { username },
         relations: ['role', 'store'],
       });
-      expect(bcrypt.compare).toHaveBeenCalledWith(password, mockUser.passwordHash);
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        password,
+        mockUser.passwordHash,
+      );
       expect(result).toEqual(mockUser);
     });
 
@@ -206,4 +212,3 @@ describe('AuthService', () => {
     });
   });
 });
-

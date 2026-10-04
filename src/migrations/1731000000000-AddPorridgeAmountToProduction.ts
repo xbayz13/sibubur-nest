@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddPorridgeAmountToProduction1731000000000 implements MigrationInterface {
+export class AddPorridgeAmountToProduction1731000000000
+  implements MigrationInterface
+{
   name = 'AddPorridgeAmountToProduction1731000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -20,4 +22,3 @@ export class AddPorridgeAmountToProduction1731000000000 implements MigrationInte
     await queryRunner.dropColumn('productions', 'porridge_amount');
   }
 }
-

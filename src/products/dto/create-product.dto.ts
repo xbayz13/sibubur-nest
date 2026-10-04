@@ -26,5 +26,3 @@ export class CreateProductDto {
   @Min(0)
   price: number;
 }
-
-

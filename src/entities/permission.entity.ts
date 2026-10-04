@@ -32,8 +32,9 @@ export class Permission {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deletedAt: Date;
 
-  @OneToMany(() => RolePermission, (rolePermission) => rolePermission.permission)
+  @OneToMany(
+    () => RolePermission,
+    (rolePermission) => rolePermission.permission,
+  )
   rolePermissions: RolePermission[];
 }
-
-

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Attendance, AttendanceStatus } from '../entities/attendance.entity';
@@ -32,7 +36,9 @@ export class AttendancesService {
     });
 
     if (existing) {
-      throw new ConflictException('Attendance already recorded for this employee on this date');
+      throw new ConflictException(
+        'Attendance already recorded for this employee on this date',
+      );
     }
 
     const attendance = this.attendanceRepository.create({
@@ -77,7 +83,10 @@ export class AttendancesService {
     return attendance;
   }
 
-  async update(id: number, updateAttendanceDto: UpdateAttendanceDto): Promise<Attendance> {
+  async update(
+    id: number,
+    updateAttendanceDto: UpdateAttendanceDto,
+  ): Promise<Attendance> {
     const attendance = await this.findOne(id);
     Object.assign(attendance, updateAttendanceDto);
     return await this.attendanceRepository.save(attendance);

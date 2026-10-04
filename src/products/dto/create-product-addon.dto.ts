@@ -12,5 +12,3 @@ export class CreateProductAddonDto {
   @Min(0)
   price?: number;
 }
-
-

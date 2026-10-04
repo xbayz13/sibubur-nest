@@ -24,7 +24,10 @@ export class StoresService {
       const store = this.storeRepository.create(createStoreDto);
       return await this.storeRepository.save(store);
     } catch (error: unknown) {
-      const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+      const code =
+        error && typeof error === 'object' && 'code' in error
+          ? (error as { code: string }).code
+          : undefined;
       if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Store name already exists');
       }
@@ -32,7 +35,10 @@ export class StoresService {
     }
   }
 
-  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Store>> {
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Store>> {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.storeRepository.findAndCount({
       where: { deletedAt: IsNull() },
@@ -64,4 +70,3 @@ export class StoresService {
     await this.storeRepository.softDelete(id);
   }
 }
-

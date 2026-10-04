@@ -25,11 +25,15 @@ export class ProductAddonProduct {
   @JoinColumn({ name: 'addon_id' })
   addon: ProductAddon;
 
-  @Column({ name: 'addon_price_override', type: 'decimal', precision: 12, scale: 2, nullable: true })
+  @Column({
+    name: 'addon_price_override',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
   addonPriceOverride: number;
 
   @CreateDateColumn({ name: 'assigned_at' })
   assignedAt: Date;
 }
-
-

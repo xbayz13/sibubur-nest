@@ -13,4 +13,3 @@ import { WeatherScheduler } from './weather.scheduler';
   exports: [WeatherService, BMKGService],
 })
 export class WeatherModule {}
-

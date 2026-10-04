@@ -20,7 +20,10 @@ export class EmployeesService {
     return await this.employeeRepository.save(employee);
   }
 
-  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Employee>> {
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Employee>> {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.employeeRepository.findAndCount({
       relations: ['store'],
@@ -42,7 +45,10 @@ export class EmployeesService {
     return employee;
   }
 
-  async update(id: number, updateEmployeeDto: UpdateEmployeeDto): Promise<Employee> {
+  async update(
+    id: number,
+    updateEmployeeDto: UpdateEmployeeDto,
+  ): Promise<Employee> {
     const employee = await this.findOne(id);
     Object.assign(employee, updateEmployeeDto);
     return await this.employeeRepository.save(employee);
@@ -53,5 +59,3 @@ export class EmployeesService {
     await this.employeeRepository.delete(id);
   }
 }
-
-

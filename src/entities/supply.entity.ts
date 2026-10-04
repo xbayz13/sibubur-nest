@@ -38,5 +38,3 @@ export class Supply {
   @OneToMany(() => ProductionSupply, (ps) => ps.supply)
   productionSupplies: ProductionSupply[];
 }
-
-

@@ -12,5 +12,3 @@ export class AssignPermissionsDto {
   @Min(1, { each: true })
   permissionIds: number[];
 }
-
-

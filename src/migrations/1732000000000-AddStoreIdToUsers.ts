@@ -1,4 +1,9 @@
-import { MigrationInterface, QueryRunner, TableColumn, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  TableColumn,
+  TableForeignKey,
+} from 'typeorm';
 
 export class AddStoreIdToUsers1732000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -40,4 +45,3 @@ export class AddStoreIdToUsers1732000000000 implements MigrationInterface {
     await queryRunner.dropColumn('users', 'store_id');
   }
 }
-

@@ -38,5 +38,3 @@ export class Expense {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
-
-

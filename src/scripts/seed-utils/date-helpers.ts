@@ -15,7 +15,10 @@ const HOLIDAYS = new Set<string>([
 
 const DEFAULT_DAYS_BACK = 365;
 
-export function resolveDaysBack(raw?: string | number, fallback = DEFAULT_DAYS_BACK): number {
+export function resolveDaysBack(
+  raw?: string | number,
+  fallback = DEFAULT_DAYS_BACK,
+): number {
   if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) {
     return Math.floor(raw);
   }
@@ -34,7 +37,10 @@ export function resolveBaseDate(raw?: string): Date {
   return base;
 }
 
-export function createDateRange(daysBack: number, baseDate: Date): { start: Date; end: Date } {
+export function createDateRange(
+  daysBack: number,
+  baseDate: Date,
+): { start: Date; end: Date } {
   const safeDays = Math.max(1, daysBack);
   const end = new Date(baseDate);
   const start = new Date(end.getTime() - (safeDays - 1) * ONE_DAY_MS);
@@ -49,12 +55,18 @@ export function isWeekendOrHoliday(date: Date): boolean {
 
 export function monthIndexFrom(date: Date, baseDate: Date): number {
   const monthsDiff =
-    baseDate.getFullYear() * 12 + baseDate.getMonth() - (date.getFullYear() * 12 + date.getMonth());
+    baseDate.getFullYear() * 12 +
+    baseDate.getMonth() -
+    (date.getFullYear() * 12 + date.getMonth());
   const m = 12 - monthsDiff;
   return Math.max(1, Math.min(12, m));
 }
 
-export function growthAdjustedVolume(baseKg: number, date: Date, baseDate: Date): number {
+export function growthAdjustedVolume(
+  baseKg: number,
+  date: Date,
+  baseDate: Date,
+): number {
   const m = monthIndexFrom(date, baseDate);
   const monthsBehind = 12 - m;
   const scaled = baseKg / Math.pow(1.03, monthsBehind);
@@ -62,7 +74,11 @@ export function growthAdjustedVolume(baseKg: number, date: Date, baseDate: Date)
   return Number((scaled * surge).toFixed(3));
 }
 
-export function dateWithRandomTime(dateISO: string, startHour: number, endHour: number): Date {
+export function dateWithRandomTime(
+  dateISO: string,
+  startHour: number,
+  endHour: number,
+): Date {
   const base = new Date(`${dateISO}T00:00:00.000Z`);
   const hour = startHour + Math.random() * Math.max(1, endHour - startHour);
   const minute = Math.floor(Math.random() * 60);

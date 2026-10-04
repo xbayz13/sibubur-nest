@@ -58,7 +58,9 @@ describe('ProductsService', () => {
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
-    productRepository = module.get<Repository<Product>>(getRepositoryToken(Product));
+    productRepository = module.get<Repository<Product>>(
+      getRepositoryToken(Product),
+    );
     productAddonProductRepository = module.get<Repository<ProductAddonProduct>>(
       getRepositoryToken(ProductAddonProduct),
     );
@@ -89,7 +91,9 @@ describe('ProductsService', () => {
 
       const result = await service.create(createProductDto);
 
-      expect(mockProductRepository.create).toHaveBeenCalledWith(createProductDto);
+      expect(mockProductRepository.create).toHaveBeenCalledWith(
+        createProductDto,
+      );
       expect(mockProductRepository.save).toHaveBeenCalledWith(mockProduct);
       expect(result).toEqual(mockProduct);
     });
@@ -144,7 +148,12 @@ describe('ProductsService', () => {
 
       expect(mockProductRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1, deletedAt: IsNull() },
-        relations: ['category', 'picture', 'productAddons', 'productAddons.addon'],
+        relations: [
+          'category',
+          'picture',
+          'productAddons',
+          'productAddons.addon',
+        ],
       });
       expect(result).toEqual(mockProduct);
     });
@@ -174,7 +183,12 @@ describe('ProductsService', () => {
 
       expect(mockProductRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1, deletedAt: IsNull() },
-        relations: ['category', 'picture', 'productAddons', 'productAddons.addon'],
+        relations: [
+          'category',
+          'picture',
+          'productAddons',
+          'productAddons.addon',
+        ],
       });
       expect(mockProductRepository.save).toHaveBeenCalledWith(updatedProduct);
       expect(result).toEqual(updatedProduct);
@@ -196,7 +210,12 @@ describe('ProductsService', () => {
 
       expect(mockProductRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1, deletedAt: IsNull() },
-        relations: ['category', 'picture', 'productAddons', 'productAddons.addon'],
+        relations: [
+          'category',
+          'picture',
+          'productAddons',
+          'productAddons.addon',
+        ],
       });
       expect(mockProductRepository.softDelete).toHaveBeenCalledWith(1);
     });
@@ -231,8 +250,12 @@ describe('ProductsService', () => {
         .mockResolvedValueOnce(mockProduct); // second call at the end
       mockProductAddonRepository.findOne.mockResolvedValue(mockAddon);
       mockProductAddonProductRepository.findOne.mockResolvedValue(null);
-      mockProductAddonProductRepository.create.mockReturnValue(mockProductAddonProduct);
-      mockProductAddonProductRepository.save.mockResolvedValue(mockProductAddonProduct);
+      mockProductAddonProductRepository.create.mockReturnValue(
+        mockProductAddonProduct,
+      );
+      mockProductAddonProductRepository.save.mockResolvedValue(
+        mockProductAddonProduct,
+      );
 
       const result = await service.addAddon(1, addAddonDto);
 
@@ -258,7 +281,9 @@ describe('ProductsService', () => {
 
       mockProductRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.addAddon(999, addAddonDto)).rejects.toThrow(NotFoundException);
+      await expect(service.addAddon(999, addAddonDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw NotFoundException if addon not found', async () => {
@@ -274,7 +299,9 @@ describe('ProductsService', () => {
       mockProductRepository.findOne.mockResolvedValue(mockProduct);
       mockProductAddonRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.addAddon(1, addAddonDto)).rejects.toThrow(NotFoundException);
+      await expect(service.addAddon(1, addAddonDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ConflictException if addon already assigned', async () => {
@@ -298,9 +325,13 @@ describe('ProductsService', () => {
 
       mockProductRepository.findOne.mockResolvedValue(mockProduct);
       mockProductAddonRepository.findOne.mockResolvedValue(mockAddon);
-      mockProductAddonProductRepository.findOne.mockResolvedValue(existingRelation);
+      mockProductAddonProductRepository.findOne.mockResolvedValue(
+        existingRelation,
+      );
 
-      await expect(service.addAddon(1, addAddonDto)).rejects.toThrow(ConflictException);
+      await expect(service.addAddon(1, addAddonDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -319,8 +350,12 @@ describe('ProductsService', () => {
       mockProductRepository.findOne
         .mockResolvedValueOnce(mockProduct) // first call in removeAddon
         .mockResolvedValueOnce(mockProduct); // second call at the end
-      mockProductAddonProductRepository.findOne.mockResolvedValue(mockProductAddonProduct);
-      mockProductAddonProductRepository.remove.mockResolvedValue(mockProductAddonProduct);
+      mockProductAddonProductRepository.findOne.mockResolvedValue(
+        mockProductAddonProduct,
+      );
+      mockProductAddonProductRepository.remove.mockResolvedValue(
+        mockProductAddonProduct,
+      );
 
       const result = await service.removeAddon(1, 1);
 
@@ -336,7 +371,9 @@ describe('ProductsService', () => {
     it('should throw NotFoundException if product not found', async () => {
       mockProductRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.removeAddon(999, 1)).rejects.toThrow(NotFoundException);
+      await expect(service.removeAddon(999, 1)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw NotFoundException if addon not assigned to product', async () => {
@@ -349,8 +386,9 @@ describe('ProductsService', () => {
       mockProductRepository.findOne.mockResolvedValue(mockProduct);
       mockProductAddonProductRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.removeAddon(1, 999)).rejects.toThrow(NotFoundException);
+      await expect(service.removeAddon(1, 999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });
-

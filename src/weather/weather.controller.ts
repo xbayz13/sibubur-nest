@@ -9,7 +9,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { WeatherService } from './weather.service';
 import { BMKGService } from './bmkg.service';
 import { CreateWeatherDto } from './dto/create-weather.dto';
@@ -65,16 +70,17 @@ export class WeatherController {
   }
 
   @Post('cleanup')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Cleanup old weather data',
-    description: 'Menghapus data cuaca lama yang tidak digunakan (tidak ada produksi terkait). Default: keep 90 hari terakhir'
+    description:
+      'Menghapus data cuaca lama yang tidak digunakan (tidak ada produksi terkait). Default: keep 90 hari terakhir',
   })
-  @ApiQuery({ 
-    name: 'keepDays', 
+  @ApiQuery({
+    name: 'keepDays',
     required: false,
     description: 'Jumlah hari data cuaca yang akan dipertahankan. Default: 90',
     type: Number,
-    example: 90
+    example: 90,
   })
   async cleanupOldWeather(@Query('keepDays') keepDays?: string) {
     const days = keepDays ? parseInt(keepDays, 10) : 90;
@@ -86,9 +92,10 @@ export class WeatherController {
   }
 
   @Post('deduplicate')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Deduplicate weather data',
-    description: 'Menghapus duplikasi data cuaca untuk tanggal yang sama. Menjaga data yang paling baru dan yang digunakan di produksi'
+    description:
+      'Menghapus duplikasi data cuaca untuk tanggal yang sama. Menjaga data yang paling baru dan yang digunakan di produksi',
   })
   async deduplicateWeather() {
     const deleted = await this.weatherService.deduplicateWeather();
@@ -100,35 +107,36 @@ export class WeatherController {
 
   @Get('bmkg/forecast')
   @Public() // No authentication required
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get weather forecast from BMKG API',
-    description: 'Mengambil prakiraan cuaca dari API BMKG berdasarkan kode wilayah adm4. Contoh: 31.71.03.1001 untuk Kemayoran, Jakarta Pusat. Untuk Ponorogo, Jawa Timur (Desa Nologaten), gunakan kode: 35.02.17.1015'
+    description:
+      'Mengambil prakiraan cuaca dari API BMKG berdasarkan kode wilayah adm4. Contoh: 31.71.03.1001 untuk Kemayoran, Jakarta Pusat. Untuk Ponorogo, Jawa Timur (Desa Nologaten), gunakan kode: 35.02.17.1015',
   })
-  @ApiQuery({ 
-    name: 'adm4', 
+  @ApiQuery({
+    name: 'adm4',
     required: true,
-    description: 'Kode wilayah administrasi tingkat IV (adm4). Format: provinsi.kabupaten.kecamatan.desa. Contoh: 31.71.03.1001 (Kemayoran) atau 35.02.17.1015 (Nologaten, Ponorogo)',
-    example: '35.02.17.1015'
+    description:
+      'Kode wilayah administrasi tingkat IV (adm4). Format: provinsi.kabupaten.kecamatan.desa. Contoh: 31.71.03.1001 (Kemayoran) atau 35.02.17.1015 (Nologaten, Ponorogo)',
+    example: '35.02.17.1015',
   })
-  @ApiQuery({ 
-    name: 'transform', 
+  @ApiQuery({
+    name: 'transform',
     required: false,
-    description: 'Jika true, mengembalikan data yang sudah ditransformasi. Default: false',
+    description:
+      'Jika true, mengembalikan data yang sudah ditransformasi. Default: false',
     type: Boolean,
-    example: false
+    example: false,
   })
   async getBMKGForecast(
     @Query('adm4') adm4: string,
     @Query('transform') transform?: string,
   ) {
     const data = await this.bmkgService.getWeatherForecast(adm4);
-    
+
     if (transform === 'true') {
       return this.bmkgService.transformBMKGData(data);
     }
-    
+
     return data;
   }
 }
-
-

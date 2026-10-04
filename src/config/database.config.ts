@@ -45,4 +45,3 @@ export function getDatabaseConfig(): DataSourceOptions {
 
 // For TypeORM CLI
 export default new DataSource(getDatabaseConfig());
-

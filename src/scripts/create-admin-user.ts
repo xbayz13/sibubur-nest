@@ -7,10 +7,10 @@ import * as readline from 'readline';
 
 /**
  * Create Admin User Script
- * 
+ *
  * This script creates the first admin user (SuperAdmin) for the system.
  * It can only be run if no SuperAdmin user exists yet.
- * 
+ *
  * Usage:
  *   ADMIN_PASSWORD=your-password npm run create-admin
  *   or
@@ -57,7 +57,9 @@ async function createAdminUser() {
     if (existingAdmin) {
       console.error('❌ ERROR: SuperAdmin user already exists!');
       console.error(`   Username: ${existingAdmin.username}`);
-      console.error('   If you need to reset the password, use the API or update directly in database.');
+      console.error(
+        '   If you need to reset the password, use the API or update directly in database.',
+      );
       await dataSource.destroy();
       process.exit(1);
     }
@@ -67,9 +69,11 @@ async function createAdminUser() {
 
     if (!password) {
       console.log('⚠️  ADMIN_PASSWORD environment variable not set.');
-      console.log('   You can set it with: ADMIN_PASSWORD=your-password npm run create-admin');
+      console.log(
+        '   You can set it with: ADMIN_PASSWORD=your-password npm run create-admin',
+      );
       console.log('   Or enter password below:\n');
-      
+
       password = await promptPassword();
     }
 
@@ -107,7 +111,9 @@ async function createAdminUser() {
     console.log(`   ID: ${savedUser.id}`);
     console.log('\n⚠️  SECURITY WARNING:');
     console.log('   • This user has FULL ACCESS to the system');
-    console.log('   • Change the password immediately if it was set via environment variable');
+    console.log(
+      '   • Change the password immediately if it was set via environment variable',
+    );
     console.log('   • Store credentials securely');
     console.log('   • Never share SuperAdmin credentials');
     console.log('\n🚀 You can now login with this account!');
@@ -175,4 +181,3 @@ function promptPassword(): Promise<string> {
 
 // Run the script
 createAdminUser();
-

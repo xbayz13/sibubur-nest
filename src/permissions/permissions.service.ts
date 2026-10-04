@@ -24,7 +24,10 @@ export class PermissionsService {
       const permission = this.permissionRepository.create(createPermissionDto);
       return await this.permissionRepository.save(permission);
     } catch (error: unknown) {
-      const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+      const code =
+        error && typeof error === 'object' && 'code' in error
+          ? (error as { code: string }).code
+          : undefined;
       if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Permission slug already exists');
       }
@@ -32,7 +35,10 @@ export class PermissionsService {
     }
   }
 
-  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Permission>> {
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Permission>> {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.permissionRepository.findAndCount({
       where: { deletedAt: IsNull() },
@@ -91,5 +97,3 @@ export class PermissionsService {
     await this.permissionRepository.softDelete(id);
   }
 }
-
-

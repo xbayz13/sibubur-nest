@@ -36,7 +36,13 @@ export class Production {
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
-  @Column({ name: 'porridge_amount', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    name: 'porridge_amount',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
   porridgeAmount: number;
 
   @Column({ name: 'author_id' })
@@ -58,4 +64,3 @@ export class Production {
   @OneToMany(() => ProductionSupply, (ps) => ps.production)
   productionSupplies: ProductionSupply[];
 }
-

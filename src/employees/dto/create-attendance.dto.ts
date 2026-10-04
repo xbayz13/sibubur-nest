@@ -15,5 +15,3 @@ export class CreateAttendanceDto {
   @IsEnum(AttendanceStatus)
   status: AttendanceStatus;
 }
-
-

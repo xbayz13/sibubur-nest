@@ -12,4 +12,3 @@ import { GuardsModule } from '../common/guards/guards.module';
   exports: [PermissionsService],
 })
 export class PermissionsModule {}
-

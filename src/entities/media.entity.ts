@@ -35,5 +35,3 @@ export class Media {
   @OneToMany(() => Product, (product) => product.picture)
   products: Product[];
 }
-
-

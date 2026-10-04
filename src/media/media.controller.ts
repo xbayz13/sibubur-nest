@@ -12,14 +12,24 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { MediaService } from './media.service';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { memoryStorage } from 'multer';
 
 // Configure multer for file uploads
-const imageFileFilter = (req: any, file: Express.Multer.File, callback: any) => {
+const imageFileFilter = (
+  req: any,
+  file: Express.Multer.File,
+  callback: any,
+) => {
   if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
     return callback(
       new BadRequestException('Only image files are allowed!'),
@@ -109,4 +119,3 @@ export class MediaController {
     return this.mediaService.remove(+id);
   }
 }
-

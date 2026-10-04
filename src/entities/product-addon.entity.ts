@@ -36,5 +36,3 @@ export class ProductAddon {
   @OneToMany(() => OrderItemAddon, (oia) => oia.addon)
   orderItemAddons: OrderItemAddon[];
 }
-
-

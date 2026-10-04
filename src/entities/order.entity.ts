@@ -72,5 +72,3 @@ export class Order {
   @OneToMany(() => Transaction, (transaction) => transaction.order)
   transactions: Transaction[];
 }
-
-

@@ -32,7 +32,9 @@ async function bootstrap() {
     const dedup = await weatherService.deduplicateWeather();
     const cleaned = await weatherService.cleanupOldWeather(keepDays);
 
-    console.log(`Deduplicated: ${dedup}, cleaned: ${cleaned} (keepDays=${keepDays})`);
+    console.log(
+      `Deduplicated: ${dedup}, cleaned: ${cleaned} (keepDays=${keepDays})`,
+    );
     console.log('✅ weather:cleanup completed');
   } catch (error) {
     console.error('❌ weather:cleanup failed:', error?.message || error);

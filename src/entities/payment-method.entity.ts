@@ -29,5 +29,3 @@ export class PaymentMethod {
   @OneToMany(() => Transaction, (transaction) => transaction.paymentMethod)
   transactions: Transaction[];
 }
-
-

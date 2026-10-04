@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsInt, IsEnum, IsNumber, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsInt,
+  IsEnum,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EmployeeStatus } from '../../entities/employee.entity';
 
@@ -23,5 +30,3 @@ export class CreateEmployeeDto {
   @Min(0)
   dailySalary?: number;
 }
-
-

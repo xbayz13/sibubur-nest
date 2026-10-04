@@ -28,5 +28,3 @@ export class RolePermission {
   @CreateDateColumn({ name: 'assigned_at' })
   assignedAt: Date;
 }
-
-

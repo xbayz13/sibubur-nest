@@ -41,7 +41,9 @@ export class MediaService {
     // Generate unique filename (sanitize originalname to prevent path traversal)
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
-    const safeBasename = path.basename(file.originalname || 'file').replace(/\.\./g, '');
+    const safeBasename = path
+      .basename(file.originalname || 'file')
+      .replace(/\.\./g, '');
     const fileExtension = path.extname(safeBasename) || '';
     const fileName = `${timestamp}-${randomString}${fileExtension}`;
     const filePath = path.join(this.uploadDir, fileName);
@@ -83,7 +85,10 @@ export class MediaService {
     return mediaFiles;
   }
 
-  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Media>> {
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Media>> {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.mediaRepository.findAndCount({
       where: { deletedAt: IsNull() },
@@ -132,5 +137,3 @@ export class MediaService {
     return path.join(this.uploadDir, fileName);
   }
 }
-
-

@@ -10,4 +10,3 @@ if (!process.env.DATABASE_URL && !process.env.DB_TYPE) {
   process.env.DB_TYPE = 'sqlite';
   process.env.DB_PATH = ':memory:';
 }
-

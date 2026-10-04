@@ -17,5 +17,3 @@ export class CreatePermissionDto {
   @IsNotEmpty()
   slug: string;
 }
-
-

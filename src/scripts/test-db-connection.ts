@@ -45,7 +45,7 @@ async function testConnection() {
     console.log('🔄 Connecting to database...');
     console.log(`📍 Database: ${config.database}`);
     console.log(`🌐 Host: ${config.host || 'SQLite file'}`);
-    
+
     await dataSource.initialize();
     console.log('✅ Database connection successful!');
 
@@ -82,5 +82,3 @@ async function testConnection() {
 }
 
 testConnection();
-
-

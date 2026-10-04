@@ -18,8 +18,11 @@ export const envValidationSchema = Joi.object({
   PORT: numberFromEnv.default(3000),
 
   // CORS: required in production (comma-separated origins allowed)
-  CORS_ORIGIN: Joi.string()
-    .when('NODE_ENV', { is: 'production', then: Joi.string().required().min(1), otherwise: Joi.optional() }),
+  CORS_ORIGIN: Joi.string().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string().required().min(1),
+    otherwise: Joi.optional(),
+  }),
 
   // Database
   DATABASE_URL: Joi.string().optional(),
@@ -71,14 +74,17 @@ export const envValidationSchema = Joi.object({
   KEEP_WEATHER_DAYS: numberFromEnv.default(90),
 
   // Logging: in production, request log only when LOG_LEVEL=debug or sampled (LOG_SAMPLE_RATE 0-1)
-  LOG_LEVEL: Joi.string().valid('debug', 'info', 'warn', 'error').default('info'),
+  LOG_LEVEL: Joi.string()
+    .valid('debug', 'info', 'warn', 'error')
+    .default('info'),
   LOG_SAMPLE_RATE: Joi.alternatives()
     .try(
       Joi.number().min(0).max(1),
       Joi.string().custom((val, helpers) => {
         if (val === '' || val === undefined) return 0.01;
         const n = Number(val);
-        if (Number.isNaN(n) || n < 0 || n > 1) return helpers.error('number.base');
+        if (Number.isNaN(n) || n < 0 || n > 1)
+          return helpers.error('number.base');
         return n;
       }),
     )

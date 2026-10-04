@@ -69,5 +69,3 @@ export class Transaction {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
-
-

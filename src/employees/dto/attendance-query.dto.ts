@@ -11,7 +11,10 @@ export class AttendanceQueryDto extends PaginationQueryDto {
   @Min(1)
   employeeId?: number;
 
-  @ApiPropertyOptional({ example: '2026-06-17', description: 'Filter by date (YYYY-MM-DD)' })
+  @ApiPropertyOptional({
+    example: '2026-06-17',
+    description: 'Filter by date (YYYY-MM-DD)',
+  })
   @IsOptional()
   @IsDateString()
   date?: string;

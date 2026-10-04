@@ -30,5 +30,3 @@ export class ProductionSupply {
   @Column()
   quantity: number;
 }
-
-

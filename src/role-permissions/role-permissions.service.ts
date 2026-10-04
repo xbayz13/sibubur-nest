@@ -82,15 +82,16 @@ export class RolePermissionsService {
     });
 
     if (!rolePermission) {
-      throw new NotFoundException(
-        'Permission is not assigned to this role',
-      );
+      throw new NotFoundException('Permission is not assigned to this role');
     }
 
     await this.rolePermissionRepository.delete({ roleId, permissionId });
   }
 
-  async addPermission(roleId: number, permissionId: number): Promise<RolePermission> {
+  async addPermission(
+    roleId: number,
+    permissionId: number,
+  ): Promise<RolePermission> {
     // Verify role exists
     const role = await this.roleRepository.findOne({ where: { id: roleId } });
     if (!role) {
@@ -102,7 +103,9 @@ export class RolePermissionsService {
       where: { id: permissionId },
     });
     if (!permission) {
-      throw new NotFoundException(`Permission with ID ${permissionId} not found`);
+      throw new NotFoundException(
+        `Permission with ID ${permissionId} not found`,
+      );
     }
 
     // Check if already assigned
@@ -111,7 +114,9 @@ export class RolePermissionsService {
     });
 
     if (existing) {
-      throw new ConflictException('Permission is already assigned to this role');
+      throw new ConflictException(
+        'Permission is already assigned to this role',
+      );
     }
 
     const rolePermission = this.rolePermissionRepository.create({
@@ -122,5 +127,3 @@ export class RolePermissionsService {
     return await this.rolePermissionRepository.save(rolePermission);
   }
 }
-
-

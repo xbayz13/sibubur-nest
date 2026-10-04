@@ -56,7 +56,9 @@ async function viewData() {
     });
     console.log('👥 USERS:');
     users.forEach((user) => {
-      console.log(`  • ${user.username} (${user.name}) - Role: ${user.role?.name}`);
+      console.log(
+        `  • ${user.username} (${user.name}) - Role: ${user.role?.name}`,
+      );
     });
     console.log('');
 
@@ -74,7 +76,9 @@ async function viewData() {
     });
     console.log('🍲 PRODUCTS:');
     products.forEach((product) => {
-      console.log(`  • ${product.name} - Rp ${product.price.toLocaleString('id-ID')} (Category: ${product.category?.name || 'N/A'})`);
+      console.log(
+        `  • ${product.name} - Rp ${product.price.toLocaleString('id-ID')} (Category: ${product.category?.name || 'N/A'})`,
+      );
     });
     console.log('');
 
@@ -86,7 +90,9 @@ async function viewData() {
     });
     console.log('🛒 ORDERS (Last 5):');
     orders.forEach((order) => {
-      console.log(`  • ${order.orderNumber} - ${order.customerName || 'Walk-in'} - ${order.status} - Rp ${order.totalAmount.toLocaleString('id-ID')} (Store: ${order.store?.name})`);
+      console.log(
+        `  • ${order.orderNumber} - ${order.customerName || 'Walk-in'} - ${order.status} - Rp ${order.totalAmount.toLocaleString('id-ID')} (Store: ${order.store?.name})`,
+      );
     });
     console.log('');
 
@@ -98,7 +104,9 @@ async function viewData() {
     });
     console.log('💵 TRANSACTIONS (Last 5):');
     transactions.forEach((txn) => {
-      console.log(`  • ${txn.transactionNumber} - ${txn.paymentMethod?.name} - Rp ${txn.amount.toLocaleString('id-ID')} - ${txn.status}`);
+      console.log(
+        `  • ${txn.transactionNumber} - ${txn.paymentMethod?.name} - Rp ${txn.amount.toLocaleString('id-ID')} - ${txn.status}`,
+      );
     });
     console.log('');
 
@@ -111,10 +119,13 @@ async function viewData() {
     console.log('🏭 PRODUCTIONS (Last 5):');
     productions.forEach((prod) => {
       const weather = prod.weather?.weatherJson as any;
-      const dateStr = prod.date instanceof Date 
-        ? prod.date.toISOString().split('T')[0] 
-        : String(prod.date).split('T')[0];
-      console.log(`  • ${dateStr} - ${prod.store?.name} - Weather: ${weather?.condition || 'N/A'}`);
+      const dateStr =
+        prod.date instanceof Date
+          ? prod.date.toISOString().split('T')[0]
+          : String(prod.date).split('T')[0];
+      console.log(
+        `  • ${dateStr} - ${prod.store?.name} - Weather: ${weather?.condition || 'N/A'}`,
+      );
     });
     console.log('');
 
@@ -126,7 +137,9 @@ async function viewData() {
     });
     console.log('💸 EXPENSES (Last 5):');
     expenses.forEach((exp) => {
-      console.log(`  • ${exp.category?.name} - ${exp.store?.name} - Rp ${exp.totalAmount.toLocaleString('id-ID')}`);
+      console.log(
+        `  • ${exp.category?.name} - ${exp.store?.name} - Rp ${exp.totalAmount.toLocaleString('id-ID')}`,
+      );
     });
     console.log('');
 
@@ -141,11 +154,14 @@ async function viewData() {
         order: { date: 'DESC' },
         take: 3,
       });
-      console.log(`  • ${emp.name} (${emp.store?.name}) - Status: ${emp.status}`);
+      console.log(
+        `  • ${emp.name} (${emp.store?.name}) - Status: ${emp.status}`,
+      );
       attendances.forEach((att) => {
-        const dateStr = att.date instanceof Date 
-          ? att.date.toISOString().split('T')[0] 
-          : String(att.date).split('T')[0];
+        const dateStr =
+          att.date instanceof Date
+            ? att.date.toISOString().split('T')[0]
+            : String(att.date).split('T')[0];
         console.log(`    - ${dateStr}: ${att.status}`);
       });
     }
@@ -160,4 +176,3 @@ async function viewData() {
 }
 
 viewData();
-

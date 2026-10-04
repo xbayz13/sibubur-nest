@@ -25,9 +25,12 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsInt()
   roleId?: number;
 
-  @ApiProperty({ example: 1, required: false, description: 'Store ID for cashier users (1-to-1 relationship)' })
+  @ApiProperty({
+    example: 1,
+    required: false,
+    description: 'Store ID for cashier users (1-to-1 relationship)',
+  })
   @IsOptional()
   @IsInt()
   storeId?: number | null;
 }
-

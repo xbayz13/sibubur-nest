@@ -41,5 +41,3 @@ export class OrderItem {
   @OneToMany(() => OrderItemAddon, (oia) => oia.orderItem)
   orderItemAddons: OrderItemAddon[];
 }
-
-

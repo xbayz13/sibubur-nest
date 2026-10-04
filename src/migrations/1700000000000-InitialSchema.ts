@@ -1,4 +1,11 @@
-import { MigrationInterface, QueryRunner, Table, TableColumn, TableForeignKey, TableIndex } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableColumn,
+  TableForeignKey,
+  TableIndex,
+} from 'typeorm';
 
 export class InitialSchema1700000000000 implements MigrationInterface {
   name = 'InitialSchema1700000000000';
@@ -7,10 +14,8 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     // Note: This is a template migration
     // In production, you should generate migrations using:
     // npm run migration:generate -- -n MigrationName
-    
     // This migration should be generated from your current schema
     // For now, we'll create a placeholder that can be replaced
-    
     // Example structure (you'll need to generate actual migrations):
     // await queryRunner.createTable(
     //   new Table({
@@ -32,7 +37,6 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     //     ],
     //   }),
     // );
-    
     // For now, this migration is a placeholder
     // Run: npm run migration:generate -- -n InitialSchema
     // to generate the actual migration from your entities
@@ -42,4 +46,3 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     // Drop tables in reverse order
   }
 }
-

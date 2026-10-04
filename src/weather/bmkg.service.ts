@@ -30,28 +30,30 @@ export interface BMKGWeatherData {
       timezone: string;
       type: string;
     };
-    cuaca: Array<Array<{
-      datetime: string;
-      t: number; // temperature
-      tcc: number; // total cloud cover
-      tp: number; // total precipitation
-      weather: number; // weather code
-      weather_desc: string; // weather description (Indonesian)
-      weather_desc_en: string; // weather description (English)
-      wd_deg: number; // wind direction degree
-      wd: string; // wind direction
-      wd_to: string; // wind direction to
-      ws: number; // wind speed
-      hu: number; // humidity
-      vs: number; // visibility
-      vs_text: string; // visibility text
-      time_index: string;
-      analysis_date: string;
-      image: string;
-      utc_datetime: string;
-      local_datetime: string;
-      source?: string;
-    }>>;
+    cuaca: Array<
+      Array<{
+        datetime: string;
+        t: number; // temperature
+        tcc: number; // total cloud cover
+        tp: number; // total precipitation
+        weather: number; // weather code
+        weather_desc: string; // weather description (Indonesian)
+        weather_desc_en: string; // weather description (English)
+        wd_deg: number; // wind direction degree
+        wd: string; // wind direction
+        wd_to: string; // wind direction to
+        ws: number; // wind speed
+        hu: number; // humidity
+        vs: number; // visibility
+        vs_text: string; // visibility text
+        time_index: string;
+        analysis_date: string;
+        image: string;
+        utc_datetime: string;
+        local_datetime: string;
+        source?: string;
+      }>
+    >;
   }>;
 }
 
@@ -64,7 +66,10 @@ export class BMKGService {
    * @param adm4Code - Kode wilayah administrasi tingkat IV (contoh: 31.71.03.1001 untuk Kemayoran)
    * @returns Weather forecast data from BMKG
    */
-  async getWeatherForecast(adm4Code: string, localDatetime: string = new Date().toISOString()): Promise<BMKGWeatherData> {
+  async getWeatherForecast(
+    adm4Code: string,
+    localDatetime: string = new Date().toISOString(),
+  ): Promise<BMKGWeatherData> {
     try {
       const response = await axios.get<BMKGWeatherData>(
         `${this.BMKG_API_BASE_URL}/prakiraan-cuaca`,
@@ -77,8 +82,12 @@ export class BMKGService {
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError<{ message: string; error: string; statusCode: number }>;
-        
+        const axiosError = error as AxiosError<{
+          message: string;
+          error: string;
+          statusCode: number;
+        }>;
+
         if (axiosError.response?.status === 404) {
           throw new HttpException(
             {
@@ -127,7 +136,10 @@ export class BMKGService {
    * @param bmkgData - Raw data from BMKG API
    * @returns Simplified weather data
    */
-  transformBMKGData(bmkgData: BMKGWeatherData, options?: { includeRaw?: boolean }) {
+  transformBMKGData(
+    bmkgData: BMKGWeatherData,
+    options?: { includeRaw?: boolean },
+  ) {
     if (!bmkgData.data || bmkgData.data.length === 0) {
       return null;
     }
@@ -138,14 +150,19 @@ export class BMKGService {
     const dayAfterForecast = firstData.cuaca[2] || [];
 
     // Get current/latest forecast
-    const currentForecast = todayForecast[todayForecast.length - 1] || todayForecast[0];
+    const currentForecast =
+      todayForecast[todayForecast.length - 1] || todayForecast[0];
 
     const deriveCondition = (forecastArray: any[], fallback?: string) => {
-      if (forecastArray && forecastArray.length > 0) return forecastArray[0].weather_desc;
+      if (forecastArray && forecastArray.length > 0)
+        return forecastArray[0].weather_desc;
       return fallback || null;
     };
 
-    const derivedCondition = deriveCondition(todayForecast, currentForecast?.weather_desc);
+    const derivedCondition = deriveCondition(
+      todayForecast,
+      currentForecast?.weather_desc,
+    );
     const derivedDescription = deriveCondition(
       todayForecast,
       currentForecast?.weather_desc_en || currentForecast?.weather_desc,
@@ -164,21 +181,23 @@ export class BMKGService {
         },
         timezone: bmkgData.lokasi.timezone,
       },
-      current: currentForecast ? {
-        temperature: currentForecast.t,
-        condition: currentForecast.weather_desc,
-        conditionEn: currentForecast.weather_desc_en,
-        humidity: currentForecast.hu,
-        windSpeed: currentForecast.ws,
-        windDirection: currentForecast.wd,
-        visibility: currentForecast.vs_text,
-        precipitation: currentForecast.tp,
-        cloudCover: currentForecast.tcc,
-        datetime: currentForecast.local_datetime,
-        image: currentForecast.image,
-      } : null,
+      current: currentForecast
+        ? {
+            temperature: currentForecast.t,
+            condition: currentForecast.weather_desc,
+            conditionEn: currentForecast.weather_desc_en,
+            humidity: currentForecast.hu,
+            windSpeed: currentForecast.ws,
+            windDirection: currentForecast.wd,
+            visibility: currentForecast.vs_text,
+            precipitation: currentForecast.tp,
+            cloudCover: currentForecast.tcc,
+            datetime: currentForecast.local_datetime,
+            image: currentForecast.image,
+          }
+        : null,
       forecasts: {
-        today: todayForecast.map(f => ({
+        today: todayForecast.map((f) => ({
           temperature: f.t,
           condition: f.weather_desc,
           humidity: f.hu,
@@ -187,7 +206,7 @@ export class BMKGService {
           datetime: f.local_datetime,
           timeIndex: f.time_index,
         })),
-        tomorrow: tomorrowForecast.map(f => ({
+        tomorrow: tomorrowForecast.map((f) => ({
           temperature: f.t,
           condition: f.weather_desc,
           humidity: f.hu,
@@ -196,7 +215,7 @@ export class BMKGService {
           datetime: f.local_datetime,
           timeIndex: f.time_index,
         })),
-        dayAfter: dayAfterForecast.map(f => ({
+        dayAfter: dayAfterForecast.map((f) => ({
           temperature: f.t,
           condition: f.weather_desc,
           humidity: f.hu,

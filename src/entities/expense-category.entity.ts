@@ -29,5 +29,3 @@ export class ExpenseCategory {
   @OneToMany(() => Expense, (expense) => expense.category)
   expenses: Expense[];
 }
-
-

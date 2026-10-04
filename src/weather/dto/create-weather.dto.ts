@@ -16,10 +16,11 @@ export class CreateWeatherDto {
   @IsString()
   locationCode?: string;
 
-  @ApiProperty({ example: { temperature: 30, condition: 'sunny' }, required: false })
+  @ApiProperty({
+    example: { temperature: 30, condition: 'sunny' },
+    required: false,
+  })
   @IsOptional()
   @IsObject()
   weatherJson?: Record<string, any>;
 }
-
-

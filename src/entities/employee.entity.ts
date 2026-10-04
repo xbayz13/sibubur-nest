@@ -38,7 +38,13 @@ export class Employee {
   })
   status: EmployeeStatus;
 
-  @Column({ name: 'daily_salary', type: 'decimal', precision: 12, scale: 2, nullable: true })
+  @Column({
+    name: 'daily_salary',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
   dailySalary: number;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -50,5 +56,3 @@ export class Employee {
   @OneToMany(() => Attendance, (attendance) => attendance.employee)
   attendances: Attendance[];
 }
-
-

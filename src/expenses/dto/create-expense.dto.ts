@@ -15,5 +15,3 @@ export class CreateExpenseDto {
   @Min(0)
   totalAmount: number;
 }
-
-

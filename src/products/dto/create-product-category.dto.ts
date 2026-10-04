@@ -11,10 +11,11 @@ export class CreateProductCategoryDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ example: 'Kategori untuk berbagai jenis bubur', required: false })
+  @ApiProperty({
+    example: 'Kategori untuk berbagai jenis bubur',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   description?: string;
 }
-
-

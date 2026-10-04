@@ -7,5 +7,3 @@ export class CreateExpenseCategoryDto {
   @IsNotEmpty()
   name: string;
 }
-
-

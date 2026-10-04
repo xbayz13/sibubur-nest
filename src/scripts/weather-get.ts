@@ -76,31 +76,44 @@ async function bootstrap() {
 
     // Cap the span to avoid excessive calls
     const maxDays = 10; // safeguard
-    const diffDays = Math.floor((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
+    const diffDays =
+      Math.floor((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
     if (diffDays > maxDays) {
-      throw new Error(`Date range too large (${diffDays} days). Please shorten (max ${maxDays}).`);
+      throw new Error(
+        `Date range too large (${diffDays} days). Please shorten (max ${maxDays}).`,
+      );
     }
 
     let current = new Date(startDate);
     while (current <= endDate) {
       const dateISO = current.toISOString().split('T')[0];
-      const raw = await bmkgService.getWeatherForecast(adm4, `${dateISO}T00:00:00.000Z`);
+      const raw = await bmkgService.getWeatherForecast(
+        adm4,
+        `${dateISO}T00:00:00.000Z`,
+      );
 
       // Use day offsets relative to the BMKG response
       const dayOffsets: Array<0 | 1 | 2> = [0, 1, 2];
 
       for (const offset of dayOffsets) {
-        const transformed = bmkgService.transformBMKGDataForDay(raw, offset, { includeRaw: false });
+        const transformed = bmkgService.transformBMKGDataForDay(raw, offset, {
+          includeRaw: false,
+        });
 
         if (!transformed) {
-          console.warn(`No forecast data for day offset ${offset} (date ${dateISO})`);
+          console.warn(
+            `No forecast data for day offset ${offset} (date ${dateISO})`,
+          );
           continue;
         }
 
-        const dateFromForecast = transformed.forecasts.day?.[0]?.datetime?.split(' ')[0];
-        const date = dateFromForecast || new Date(current.getTime() + offset * 86400000)
-          .toISOString()
-          .split('T')[0];
+        const dateFromForecast =
+          transformed.forecasts.day?.[0]?.datetime?.split(' ')[0];
+        const date =
+          dateFromForecast ||
+          new Date(current.getTime() + offset * 86400000)
+            .toISOString()
+            .split('T')[0];
 
         await weatherService.createOrUpdate({
           date,

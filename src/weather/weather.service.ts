@@ -20,7 +20,10 @@ export class WeatherService {
     return await this.createOrUpdate(createWeatherDto);
   }
 
-  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Weather>> {
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Weather>> {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.weatherRepository.findAndCount({
       order: { date: 'DESC', createdAt: 'DESC' },
@@ -40,7 +43,10 @@ export class WeatherService {
     return weather;
   }
 
-  async findByDate(date: string, locationCode?: string): Promise<Weather | null> {
+  async findByDate(
+    date: string,
+    locationCode?: string,
+  ): Promise<Weather | null> {
     return await this.weatherRepository.findOne({
       where: {
         date: date as any,
@@ -49,7 +55,10 @@ export class WeatherService {
     });
   }
 
-  async update(id: number, updateWeatherDto: UpdateWeatherDto): Promise<Weather> {
+  async update(
+    id: number,
+    updateWeatherDto: UpdateWeatherDto,
+  ): Promise<Weather> {
     const weather = await this.findOne(id);
     Object.assign(weather, updateWeatherDto);
     return await this.weatherRepository.save(weather);
@@ -72,7 +81,9 @@ export class WeatherService {
     const oldWeather = await this.weatherRepository
       .createQueryBuilder('weather')
       .leftJoin('weather.productions', 'production')
-      .where('weather.date < :cutoffDate', { cutoffDate: cutoffDate.toISOString().split('T')[0] })
+      .where('weather.date < :cutoffDate', {
+        cutoffDate: cutoffDate.toISOString().split('T')[0],
+      })
       .andWhere('production.id IS NULL')
       .getMany();
 
@@ -102,10 +113,11 @@ export class WeatherService {
         dateKey = dateValue.toISOString().split('T')[0];
       } else {
         // Handle string or other types
-        const dateStr = typeof dateValue === 'string' ? dateValue : String(dateValue);
+        const dateStr =
+          typeof dateValue === 'string' ? dateValue : String(dateValue);
         dateKey = dateStr.split('T')[0];
       }
-      
+
       if (!weatherByDate.has(dateKey)) {
         weatherByDate.set(dateKey, []);
       }
@@ -118,24 +130,33 @@ export class WeatherService {
       if (weathers.length > 1) {
         // Sort by createdAt DESC to get the most recent first
         weathers.sort((a, b) => {
-          const aTime = a.createdAt instanceof Date ? a.createdAt.getTime() : new Date(a.createdAt).getTime();
-          const bTime = b.createdAt instanceof Date ? b.createdAt.getTime() : new Date(b.createdAt).getTime();
+          const aTime =
+            a.createdAt instanceof Date
+              ? a.createdAt.getTime()
+              : new Date(a.createdAt).getTime();
+          const bTime =
+            b.createdAt instanceof Date
+              ? b.createdAt.getTime()
+              : new Date(b.createdAt).getTime();
           return bTime - aTime;
         });
 
         // Keep the first one (most recent), delete the rest
         const toDelete = weathers.slice(1);
         const idsToDelete = toDelete.map((w) => w.id);
-        
+
         // Check if any of these are used in productions
         for (const weather of toDelete) {
           const weatherWithProductions = await this.weatherRepository.findOne({
             where: { id: weather.id },
             relations: ['productions'],
           });
-          
+
           // Only delete if not used in productions
-          if (weatherWithProductions && weatherWithProductions.productions.length === 0) {
+          if (
+            weatherWithProductions &&
+            weatherWithProductions.productions.length === 0
+          ) {
             await this.weatherRepository.delete(weather.id);
             duplicatesRemoved++;
           }
@@ -150,8 +171,11 @@ export class WeatherService {
    * Create or update weather - prevents duplicates
    */
   async createOrUpdate(createWeatherDto: CreateWeatherDto): Promise<Weather> {
-    const existing = await this.findByDate(createWeatherDto.date, createWeatherDto.locationCode);
-    
+    const existing = await this.findByDate(
+      createWeatherDto.date,
+      createWeatherDto.locationCode,
+    );
+
     if (existing) {
       // Update existing record
       Object.assign(existing, {
@@ -164,17 +188,17 @@ export class WeatherService {
       // Create new record
       const weather = this.weatherRepository.create(createWeatherDto);
       const saved = await this.weatherRepository.save(weather);
-      
+
       // Auto cleanup old weather data periodically (every 10 new records)
       // This prevents database from getting too large
       const totalWeather = await this.weatherRepository.count();
       if (totalWeather % 10 === 0) {
         // Run cleanup in background (don't await)
-        this.cleanupOldWeather(90).catch(err => {
+        this.cleanupOldWeather(90).catch((err) => {
           console.error('Error during auto cleanup:', err);
         });
       }
-      
+
       return saved;
     }
   }

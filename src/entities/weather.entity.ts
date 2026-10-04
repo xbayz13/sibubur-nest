@@ -36,4 +36,3 @@ export class Weather {
   @OneToMany(() => Production, (production) => production.weather)
   productions: Production[];
 }
-

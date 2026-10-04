@@ -35,11 +35,19 @@ export class ProductsService {
     }
   }
 
-  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<Product>> {
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<Product>> {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.productRepository.findAndCount({
       where: { deletedAt: IsNull() },
-      relations: ['category', 'picture', 'productAddons', 'productAddons.addon'],
+      relations: [
+        'category',
+        'picture',
+        'productAddons',
+        'productAddons.addon',
+      ],
       order: { createdAt: 'DESC' },
       take,
       skip,
@@ -50,7 +58,12 @@ export class ProductsService {
   async findOne(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['category', 'picture', 'productAddons', 'productAddons.addon'],
+      relations: [
+        'category',
+        'picture',
+        'productAddons',
+        'productAddons.addon',
+      ],
     });
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
@@ -58,7 +71,10 @@ export class ProductsService {
     return product;
   }
 
-  async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
+  async update(
+    id: number,
+    updateProductDto: UpdateProductDto,
+  ): Promise<Product> {
     const product = await this.findOne(id);
     Object.assign(product, updateProductDto);
     return await this.productRepository.save(product);
@@ -69,16 +85,21 @@ export class ProductsService {
     await this.productRepository.softDelete(id);
   }
 
-  async addAddon(productId: number, addAddonDto: AddProductAddonDto): Promise<Product> {
+  async addAddon(
+    productId: number,
+    addAddonDto: AddProductAddonDto,
+  ): Promise<Product> {
     // Verify product exists
     const product = await this.findOne(productId);
-    
+
     // Verify addon exists
     const addon = await this.productAddonRepository.findOne({
       where: { id: addAddonDto.addonId, deletedAt: IsNull() },
     });
     if (!addon) {
-      throw new NotFoundException(`Addon with ID ${addAddonDto.addonId} not found`);
+      throw new NotFoundException(
+        `Addon with ID ${addAddonDto.addonId} not found`,
+      );
     }
 
     // Check if relationship already exists
@@ -111,12 +132,13 @@ export class ProductsService {
     await this.findOne(productId);
 
     // Find and remove the relationship
-    const productAddonProduct = await this.productAddonProductRepository.findOne({
-      where: {
-        productId,
-        addonId,
-      },
-    });
+    const productAddonProduct =
+      await this.productAddonProductRepository.findOne({
+        where: {
+          productId,
+          addonId,
+        },
+      });
 
     if (!productAddonProduct) {
       throw new NotFoundException('Addon is not assigned to this product');
@@ -128,7 +150,10 @@ export class ProductsService {
     return await this.findOne(productId);
   }
 
-  async updateProductAddons(productId: number, addonIds: number[]): Promise<Product> {
+  async updateProductAddons(
+    productId: number,
+    addonIds: number[],
+  ): Promise<Product> {
     // Verify product exists
     await this.findOne(productId);
 
@@ -138,12 +163,16 @@ export class ProductsService {
     });
 
     const currentAddonIds = currentRelations.map((rel) => rel.addonId);
-    
+
     // Find addons to add
-    const addonIdsToAdd = addonIds.filter((id) => !currentAddonIds.includes(id));
-    
+    const addonIdsToAdd = addonIds.filter(
+      (id) => !currentAddonIds.includes(id),
+    );
+
     // Find addons to remove
-    const addonIdsToRemove = currentAddonIds.filter((id) => !addonIds.includes(id));
+    const addonIdsToRemove = currentAddonIds.filter(
+      (id) => !addonIds.includes(id),
+    );
 
     // Remove relationships
     for (const addonId of addonIdsToRemove) {
@@ -181,4 +210,3 @@ export class ProductsService {
     return await this.findOne(productId);
   }
 }
-

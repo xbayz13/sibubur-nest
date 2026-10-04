@@ -19,12 +19,19 @@ export class PaymentMethodsService {
     private paymentMethodRepository: Repository<PaymentMethod>,
   ) {}
 
-  async create(createPaymentMethodDto: CreatePaymentMethodDto): Promise<PaymentMethod> {
+  async create(
+    createPaymentMethodDto: CreatePaymentMethodDto,
+  ): Promise<PaymentMethod> {
     try {
-      const paymentMethod = this.paymentMethodRepository.create(createPaymentMethodDto);
+      const paymentMethod = this.paymentMethodRepository.create(
+        createPaymentMethodDto,
+      );
       return await this.paymentMethodRepository.save(paymentMethod);
     } catch (error: unknown) {
-      const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+      const code =
+        error && typeof error === 'object' && 'code' in error
+          ? (error as { code: string }).code
+          : undefined;
       if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Payment method name already exists');
       }
@@ -32,7 +39,10 @@ export class PaymentMethodsService {
     }
   }
 
-  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<PaymentMethod>> {
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<PaymentMethod>> {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.paymentMethodRepository.findAndCount({
       where: { deletedAt: IsNull() },
@@ -53,7 +63,10 @@ export class PaymentMethodsService {
     return paymentMethod;
   }
 
-  async update(id: number, updatePaymentMethodDto: UpdatePaymentMethodDto): Promise<PaymentMethod> {
+  async update(
+    id: number,
+    updatePaymentMethodDto: UpdatePaymentMethodDto,
+  ): Promise<PaymentMethod> {
     const paymentMethod = await this.findOne(id);
     Object.assign(paymentMethod, updatePaymentMethodDto);
     return await this.paymentMethodRepository.save(paymentMethod);
@@ -64,4 +77,3 @@ export class PaymentMethodsService {
     await this.paymentMethodRepository.softDelete(id);
   }
 }
-

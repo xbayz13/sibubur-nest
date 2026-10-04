@@ -35,7 +35,11 @@ export class CreateProductionDto {
   @IsInt()
   storeId: number;
 
-  @ApiProperty({ example: 50.5, description: 'Amount of porridge to sell (in portions)', required: false })
+  @ApiProperty({
+    example: 50.5,
+    description: 'Amount of porridge to sell (in portions)',
+    required: false,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -48,5 +52,3 @@ export class CreateProductionDto {
   @Type(() => ProductionSupplyDto)
   supplies?: ProductionSupplyDto[];
 }
-
-

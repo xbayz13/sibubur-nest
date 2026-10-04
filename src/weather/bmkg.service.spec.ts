@@ -72,7 +72,8 @@ describe('BMKGService', () => {
                 vs_text: '> 10 km',
                 time_index: '10-11',
                 analysis_date: '2025-11-22T00:00:00',
-                image: 'https://api-apps.bmkg.go.id/storage/icon/cuaca/berawan-pm.svg',
+                image:
+                  'https://api-apps.bmkg.go.id/storage/icon/cuaca/berawan-pm.svg',
                 utc_datetime: '2025-11-22 11:00:00',
                 local_datetime: '2025-11-22 18:00:00',
               },
@@ -95,7 +96,8 @@ describe('BMKGService', () => {
                 vs_text: '> 10 km',
                 time_index: '25-26',
                 analysis_date: '2025-11-22T00:00:00',
-                image: 'https://api-apps.bmkg.go.id/storage/icon/cuaca/cerah-am.svg',
+                image:
+                  'https://api-apps.bmkg.go.id/storage/icon/cuaca/cerah-am.svg',
                 utc_datetime: '2025-11-23 02:00:00',
                 local_datetime: '2025-11-23 09:00:00',
               },
@@ -124,7 +126,11 @@ describe('BMKGService', () => {
       const axiosError = {
         response: {
           status: 404,
-          data: { message: 'Data not found', error: 'Not Found', statusCode: 404 },
+          data: {
+            message: 'Data not found',
+            error: 'Not Found',
+            statusCode: 404,
+          },
         },
         isAxiosError: true,
       } as AxiosError;
@@ -238,7 +244,8 @@ describe('BMKGService', () => {
                 vs_text: '> 10 km',
                 time_index: '10-11',
                 analysis_date: '2025-11-22T00:00:00',
-                image: 'https://api-apps.bmkg.go.id/storage/icon/cuaca/berawan-pm.svg',
+                image:
+                  'https://api-apps.bmkg.go.id/storage/icon/cuaca/berawan-pm.svg',
                 utc_datetime: '2025-11-22 11:00:00',
                 local_datetime: '2025-11-22 18:00:00',
               },
@@ -261,7 +268,8 @@ describe('BMKGService', () => {
                 vs_text: '> 10 km',
                 time_index: '25-26',
                 analysis_date: '2025-11-22T00:00:00',
-                image: 'https://api-apps.bmkg.go.id/storage/icon/cuaca/cerah-am.svg',
+                image:
+                  'https://api-apps.bmkg.go.id/storage/icon/cuaca/cerah-am.svg',
                 utc_datetime: '2025-11-23 02:00:00',
                 local_datetime: '2025-11-23 09:00:00',
               },
@@ -284,7 +292,8 @@ describe('BMKGService', () => {
                 vs_text: '> 10 km',
                 time_index: '48-49',
                 analysis_date: '2025-11-22T00:00:00',
-                image: 'https://api-apps.bmkg.go.id/storage/icon/cuaca/cerah-berawan-am.svg',
+                image:
+                  'https://api-apps.bmkg.go.id/storage/icon/cuaca/cerah-berawan-am.svg',
                 utc_datetime: '2025-11-24 02:00:00',
                 local_datetime: '2025-11-24 09:00:00',
               },
@@ -367,4 +376,3 @@ describe('BMKGService', () => {
     });
   });
 });
-

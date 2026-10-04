@@ -19,12 +19,17 @@ export class ExpenseCategoriesService {
     private categoryRepository: Repository<ExpenseCategory>,
   ) {}
 
-  async create(createCategoryDto: CreateExpenseCategoryDto): Promise<ExpenseCategory> {
+  async create(
+    createCategoryDto: CreateExpenseCategoryDto,
+  ): Promise<ExpenseCategory> {
     try {
       const category = this.categoryRepository.create(createCategoryDto);
       return await this.categoryRepository.save(category);
     } catch (error: unknown) {
-      const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+      const code =
+        error && typeof error === 'object' && 'code' in error
+          ? (error as { code: string }).code
+          : undefined;
       if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === '23505') {
         throw new ConflictException('Category name already exists');
       }
@@ -32,7 +37,10 @@ export class ExpenseCategoriesService {
     }
   }
 
-  async findAll(page?: number, limit?: number): Promise<PaginatedResponse<ExpenseCategory>> {
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResponse<ExpenseCategory>> {
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);
     const [data, total] = await this.categoryRepository.findAndCount({
       where: { deletedAt: IsNull() },
@@ -53,7 +61,10 @@ export class ExpenseCategoriesService {
     return category;
   }
 
-  async update(id: number, updateCategoryDto: UpdateExpenseCategoryDto): Promise<ExpenseCategory> {
+  async update(
+    id: number,
+    updateCategoryDto: UpdateExpenseCategoryDto,
+  ): Promise<ExpenseCategory> {
     const category = await this.findOne(id);
     Object.assign(category, updateCategoryDto);
     return await this.categoryRepository.save(category);
@@ -64,4 +75,3 @@ export class ExpenseCategoriesService {
     await this.categoryRepository.softDelete(id);
   }
 }
-

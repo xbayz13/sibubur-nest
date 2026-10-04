@@ -17,4 +17,3 @@ export class ThrottleExceptPublicGuard extends ThrottlerGuard {
     return isPublic || false;
   }
 }
-
