@@ -36,7 +36,8 @@ export class ReportsService {
   async getDailyReport(date: string, storeId?: number) {
     const cacheKey = `report:daily:${date}:${storeId ?? 'all'}`;
     const cached = await this.cacheManager.get(cacheKey);
-    if (cached) return cached as Awaited<ReturnType<ReportsService['getDailyReport']>>;
+    if (cached)
+      return cached as Awaited<ReturnType<ReportsService['getDailyReport']>>;
 
     const startDate = new Date(`${date}T00:00:00.000Z`);
     const endDate = new Date(`${date}T23:59:59.999Z`);
@@ -69,7 +70,11 @@ export class ReportsService {
         }),
         this.productionRepository.findOne({
           where: productionWhere,
-          relations: ['productionSupplies', 'productionSupplies.supply', 'weather'],
+          relations: [
+            'productionSupplies',
+            'productionSupplies.supply',
+            'weather',
+          ],
         }),
         this.weatherRepository.findOne({
           where: { date: date as any },
@@ -95,7 +100,9 @@ export class ReportsService {
       (sum, exp) => sum + Number(exp.totalAmount),
       0,
     );
-    const presentCount = attendances.filter((a) => a.status === 'present').length;
+    const presentCount = attendances.filter(
+      (a) => a.status === 'present',
+    ).length;
     const absentCount = attendances.filter((a) => a.status === 'absent').length;
 
     const nextDate = new Date(date);
@@ -145,7 +152,8 @@ export class ReportsService {
   async getMonthlyReport(year: number, month: number, storeId?: number) {
     const cacheKey = `report:monthly:${year}:${month}:${storeId ?? 'all'}`;
     const cached = await this.cacheManager.get(cacheKey);
-    if (cached) return cached as Awaited<ReturnType<ReportsService['getMonthlyReport']>>;
+    if (cached)
+      return cached as Awaited<ReturnType<ReportsService['getMonthlyReport']>>;
 
     const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
@@ -162,7 +170,9 @@ export class ReportsService {
         where: { ...where, status: TransactionStatus.PAID },
       }),
       this.expenseRepository.find({ where }),
-      this.orderRepository.find({ where: { ...where, status: OrderStatus.PAID } }),
+      this.orderRepository.find({
+        where: { ...where, status: OrderStatus.PAID },
+      }),
     ]);
 
     const totalRevenue = transactions.reduce(
@@ -176,7 +186,7 @@ export class ReportsService {
 
     const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
     const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
-    
+
     const productions = await this.productionRepository.find({
       where: {
         date: Between(startDateStr, endDateStr) as any,
@@ -213,9 +223,15 @@ export class ReportsService {
     productions.forEach((production) => {
       if (production.date) {
         // Ensure production date is within the month range
-        const dateStr = typeof production.date === 'string' ? production.date : production.date.toString();
+        const dateStr =
+          typeof production.date === 'string'
+            ? production.date
+            : production.date.toString();
         const prodDate = new Date(dateStr);
-        if (prodDate.getFullYear() === year && prodDate.getMonth() + 1 === month) {
+        if (
+          prodDate.getFullYear() === year &&
+          prodDate.getMonth() + 1 === month
+        ) {
           daysWithActivitySet.add(dateStr);
         }
       }
@@ -224,12 +240,18 @@ export class ReportsService {
     const daysWithData = daysWithActivitySet.size;
 
     const daysInMonth = new Date(year, month, 0).getDate();
-    const averageDailyRevenue = daysWithData > 0 
-      ? totalRevenue / daysWithData 
-      : (daysInMonth > 0 && totalRevenue > 0 ? totalRevenue / daysInMonth : 0);
-    const averageDailyExpenses = daysWithData > 0 
-      ? totalExpenses / daysWithData 
-      : (daysInMonth > 0 && totalExpenses > 0 ? totalExpenses / daysInMonth : 0);
+    const averageDailyRevenue =
+      daysWithData > 0
+        ? totalRevenue / daysWithData
+        : daysInMonth > 0 && totalRevenue > 0
+          ? totalRevenue / daysInMonth
+          : 0;
+    const averageDailyExpenses =
+      daysWithData > 0
+        ? totalExpenses / daysWithData
+        : daysInMonth > 0 && totalExpenses > 0
+          ? totalExpenses / daysInMonth
+          : 0;
 
     const result = {
       year,
@@ -264,7 +286,8 @@ export class ReportsService {
   async getYearlyReport(year: number, storeId?: number) {
     const cacheKey = `report:yearly:${year}:${storeId ?? 'all'}`;
     const cached = await this.cacheManager.get(cacheKey);
-    if (cached) return cached as Awaited<ReturnType<ReportsService['getYearlyReport']>>;
+    if (cached)
+      return cached as Awaited<ReturnType<ReportsService['getYearlyReport']>>;
 
     const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
@@ -321,12 +344,18 @@ export class ReportsService {
 
     const monthsWithData = monthsWithActivitySet.size;
 
-    const averageMonthlyRevenue = monthsWithData > 0 
-      ? totalRevenue / monthsWithData 
-      : (totalRevenue > 0 ? totalRevenue / 12 : 0);
-    const averageMonthlyExpenses = monthsWithData > 0 
-      ? totalExpenses / monthsWithData 
-      : (totalExpenses > 0 ? totalExpenses / 12 : 0);
+    const averageMonthlyRevenue =
+      monthsWithData > 0
+        ? totalRevenue / monthsWithData
+        : totalRevenue > 0
+          ? totalRevenue / 12
+          : 0;
+    const averageMonthlyExpenses =
+      monthsWithData > 0
+        ? totalExpenses / monthsWithData
+        : totalExpenses > 0
+          ? totalExpenses / 12
+          : 0;
 
     const result = {
       year,
@@ -361,7 +390,10 @@ export class ReportsService {
   ) {
     const cacheKey = `report:recommendations:${targetDate}:${storeId ?? 'all'}:${lookbackDays}`;
     const cached = await this.cacheManager.get(cacheKey);
-    if (cached) return cached as Awaited<ReturnType<ReportsService['getProductionRecommendations']>>;
+    if (cached)
+      return cached as Awaited<
+        ReturnType<ReportsService['getProductionRecommendations']>
+      >;
 
     const target = new Date(targetDate);
     const targetDayOfWeek = target.getDay();
@@ -373,25 +405,29 @@ export class ReportsService {
       where.storeId = storeId;
     }
 
-    const [historicalProductions, historicalOrders, targetWeather] = await Promise.all([
-      this.productionRepository.find({
-        where: {
-          date: Between(startDate.toISOString().split('T')[0], targetDate) as any,
-          ...where,
-        },
-        relations: ['weather'],
-      }),
-      this.orderRepository.find({
-        where: {
-          createdAt: Between(startDate, new Date(targetDate)),
-          ...where,
-        },
-        relations: ['orderItems'],
-      }),
-      this.weatherRepository.findOne({
-        where: { date: targetDate as any },
-      }),
-    ]);
+    const [historicalProductions, historicalOrders, targetWeather] =
+      await Promise.all([
+        this.productionRepository.find({
+          where: {
+            date: Between(
+              startDate.toISOString().split('T')[0],
+              targetDate,
+            ) as any,
+            ...where,
+          },
+          relations: ['weather'],
+        }),
+        this.orderRepository.find({
+          where: {
+            createdAt: Between(startDate, new Date(targetDate)),
+            ...where,
+          },
+          relations: ['orderItems'],
+        }),
+        this.weatherRepository.findOne({
+          where: { date: targetDate as any },
+        }),
+      ]);
 
     const salesByDayOfWeek: { [key: number]: number[] } = {};
     historicalOrders.forEach((order) => {
@@ -413,63 +449,65 @@ export class ReportsService {
         ? targetDaySales.reduce((a, b) => a + b, 0) / targetDaySales.length
         : 0;
 
-    const isSimilarWeather = (condition1: string, condition2: string): boolean => {
+    const isSimilarWeather = (
+      condition1: string,
+      condition2: string,
+    ): boolean => {
       if (!condition1 || !condition2) return false;
       const c1 = condition1.toLowerCase();
       const c2 = condition2.toLowerCase();
       if (c1 === c2) return true;
-      const sunnyGroup = ['sunny', 'cerah', 'cerah berawan'];
+      const sunnyGroup = ['sunny', 'cerah'];
       const cloudyGroup = ['cloudy', 'berawan', 'cerah berawan'];
-      const rainyGroup = ['rainy', 'hujan', 'hujan ringan', 'hujan sedang', 'hujan lebat'];
+      const rainyGroup = ['rainy', 'hujan', 'hujan ringan', 'hujan sedang'];
       const stormyGroup = ['stormy', 'badai', 'hujan lebat', 'hujan deras'];
-      
+
       const groups = [sunnyGroup, cloudyGroup, rainyGroup, stormyGroup];
-      
+
       for (const group of groups) {
         if (group.includes(c1) && group.includes(c2)) {
           return true;
         }
       }
-      
+
       return false;
     };
 
     let weatherMultiplier = 1.0;
     if (targetWeather && targetWeather.weatherJson) {
       const targetCondition = targetWeather.weatherJson.condition;
-      
-      const similarWeatherProductions = historicalProductions.filter(
-        (p) => {
-          const prodCondition = p.weather?.weatherJson?.condition;
-          return prodCondition && isSimilarWeather(targetCondition, prodCondition);
-        },
-      );
-      
+
+      const similarWeatherProductions = historicalProductions.filter((p) => {
+        const prodCondition = p.weather?.weatherJson?.condition;
+        return (
+          prodCondition && isSimilarWeather(targetCondition, prodCondition)
+        );
+      });
+
       if (similarWeatherProductions.length > 0) {
-        const avgProductionForWeather = similarWeatherProductions.reduce(
-          (sum, p) => sum + (p.porridgeAmount || 0),
-          0,
-        ) / similarWeatherProductions.length;
+        const avgProductionForWeather =
+          similarWeatherProductions.reduce(
+            (sum, p) => sum + (p.porridgeAmount || 0),
+            0,
+          ) / similarWeatherProductions.length;
         const overallAvgProduction =
           historicalProductions.reduce(
             (sum, p) => sum + (p.porridgeAmount || 0),
             0,
           ) / historicalProductions.length;
-        if (overallAvgProduction > 0) {
-          weatherMultiplier = avgProductionForWeather / overallAvgProduction;
-        }
-      }
 
-      const targetConditionLower = targetCondition.toLowerCase();
-      if (targetConditionLower.includes('rain') || targetConditionLower.includes('hujan') || 
-          targetConditionLower.includes('storm') || targetConditionLower.includes('badai')) {
-        weatherMultiplier *= 1.2; // More porridge needed in bad weather
-      } else if (targetConditionLower.includes('sunny') || targetConditionLower.includes('cerah')) {
-        weatherMultiplier *= 0.9; // Less porridge in sunny weather
+        if (overallAvgProduction > 0 && avgProductionForWeather > 0) {
+          weatherMultiplier = avgProductionForWeather / overallAvgProduction;
+        } else {
+          weatherMultiplier = this.getFixedMultiplier(targetCondition);
+        }
       } else {
-        weatherMultiplier *= 1.0; // Normal for cloudy/other
+        weatherMultiplier = this.getFixedMultiplier(targetCondition);
       }
     }
+
+    // Clamp multiplier agar tidak ekstrem (0.5–1.5)
+    weatherMultiplier = Math.min(1.5, Math.max(0.5, weatherMultiplier));
 
     const productionSalesRatios: number[] = [];
     historicalProductions.forEach((prod) => {
@@ -487,7 +525,10 @@ export class ReportsService {
         const daySales = dayOrders.reduce(
           (sum, order) =>
             sum +
-            order.orderItems.reduce((itemSum, item) => itemSum + item.quantity, 0),
+            order.orderItems.reduce(
+              (itemSum, item) => itemSum + item.quantity,
+              0,
+            ),
           0,
         );
 
@@ -504,7 +545,8 @@ export class ReportsService {
         : 1.5;
 
     const baseRecommendation = avgSalesForDayOfWeek * avgRatio;
-    const weatherAdjustedRecommendation = baseRecommendation * weatherMultiplier;
+    const weatherAdjustedRecommendation =
+      baseRecommendation * weatherMultiplier;
 
     const recommendedAmount = Math.ceil(weatherAdjustedRecommendation * 1.1);
 
@@ -523,9 +565,7 @@ export class ReportsService {
     if (targetWeather && targetWeather.weatherJson) {
       const condition = targetWeather.weatherJson.condition || '';
       const description = targetWeather.weatherJson.description || '';
-      recommendations.push(
-        `Cuaca hari ini: ${condition}. ${description}`,
-      );
+      recommendations.push(`Cuaca hari ini: ${condition}. ${description}`);
       if (weatherMultiplier > 1.1) {
         recommendations.push(
           'Cuaca hari ini cenderung meningkatkan permintaan. Pertimbangkan untuk memproduksi lebih banyak.',
@@ -570,5 +610,36 @@ export class ReportsService {
     };
     await this.cacheManager.set(cacheKey, result);
     return result;
+  }
+
+  /**
+   * Fixed multiplier sebagai fallback jika data historis tidak cukup
+   *
+   * @param weatherCondition - Kondisi cuaca (cerah, mendung, hujan, badai)
+   * @returns Fixed multiplier berdasarkan kondisi cuaca
+   */
+  private getFixedMultiplier(weatherCondition: string): number {
+    const conditionLower = weatherCondition.toLowerCase();
+
+    if (conditionLower.includes('rain') || conditionLower.includes('hujan')) {
+      return 0.8; // Hujan: turun
+    } else if (
+      conditionLower.includes('storm') ||
+      conditionLower.includes('badai')
+    ) {
+      return 0.7; // Badai: turun banyak
+    } else if (
+      conditionLower.includes('sunny') ||
+      conditionLower.includes('cerah')
+    ) {
+      return 1.0; // Cerah: normal (baseline)
+    } else if (
+      conditionLower.includes('cloudy') ||
+      conditionLower.includes('mendung')
+    ) {
+      return 0.9; // Mendung: turun sedikit
+    } else {
+      return 1.0; // Default: normal
+    }
   }
 }

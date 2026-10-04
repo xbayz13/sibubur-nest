@@ -83,7 +83,7 @@ async function seedMaster() {
 
   // Role-permission mapping
   for (const [roleName, permissionSlugs] of Object.entries(ROLE_PERMISSIONS)) {
-    const role: any = (roles as any[]).find((r) => r.name === roleName);
+    const role: any = roles.find((r) => r.name === roleName);
     if (!role) continue;
     for (const slug of permissionSlugs) {
       const perm: any = permMap.get(slug);
@@ -117,7 +117,7 @@ async function seedMaster() {
     { name: 'Okaz' },
     { name: 'Pabrik Es' },
   ]);
-  const storeMap = new Map((stores as any[]).map((s) => [s.name, s]));
+  const storeMap = new Map(stores.map((s) => [s.name, s]));
 
   // Products (prices in Rupiah)
   const products = await upsertByName(productRepo, [
@@ -132,7 +132,7 @@ async function seedMaster() {
     { name: 'Susu Hangat', price: 5000 },
     { name: 'Es Susu', price: 5000 },
   ]);
-  const productMap = new Map((products as any[]).map((p) => [p.name, p]));
+  const productMap = new Map(products.map((p) => [p.name, p]));
 
   // Addons (prices in Rupiah)
   const addons = await upsertByName(addonRepo, [
@@ -141,14 +141,14 @@ async function seedMaster() {
     { name: 'Telur Asin', price: 3000 },
     { name: 'Kacang', price: 1000 },
   ]);
-  const addonMap = new Map((addons as any[]).map((a) => [a.name, a]));
+  const addonMap = new Map(addons.map((a) => [a.name, a]));
 
   // Link all addons to both Bubur Ayam and Bubur Polos
   const productsForAddons = ['Bubur Ayam', 'Bubur Polos'];
   for (const productName of productsForAddons) {
     const prod: any = productMap.get(productName);
     if (!prod) continue;
-    for (const addon of addons as any[]) {
+    for (const addon of addons) {
       const existing = await addonLinkRepo.findOne({
         where: { productId: prod.id, addonId: addon.id },
       });
@@ -161,7 +161,7 @@ async function seedMaster() {
   }
 
   // Users
-  const rolesByName = new Map((roles as any[]).map((r) => [r.name, r]));
+  const rolesByName = new Map(roles.map((r) => [r.name, r]));
   const hash = await bcrypt.hash(PASSWORD, 10);
   const usersToCreate = [
     {

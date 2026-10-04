@@ -28,7 +28,7 @@ const STORE_OPEN_HOUR = 5;
 const STORE_CLOSE_HOUR = 23;
 
 function splitOpex(total: number): { storeA: number; storeB: number } {
-  const jitter = (Math.random() * 0.08) - 0.04; // +/-4%
+  const jitter = Math.random() * 0.08 - 0.04; // +/-4%
   const storeAShare = 0.5 + jitter;
   const a = Math.round(total * storeAShare);
   const b = total - a;
@@ -65,12 +65,19 @@ async function bootstrap() {
     const lowStore = stores.find((s) => s.name === 'Pabrik Es');
 
     if (!highStore || !lowStore) {
-      throw new Error('Stores Okaz and Pabrik Es are required. Run the master seeder first.');
+      throw new Error(
+        'Stores Okaz and Pabrik Es are required. Run the master seeder first.',
+      );
     }
 
-    const authorUser = await userRepo.findOne({ where: { id: Not(0) }, order: { id: 'ASC' } });
+    const authorUser = await userRepo.findOne({
+      where: { id: Not(0) },
+      order: { id: 'ASC' },
+    });
     if (!authorUser) {
-      throw new Error('At least one user is required to assign as author for productions.');
+      throw new Error(
+        'At least one user is required to assign as author for productions.',
+      );
     }
 
     const expenseCategories = await expenseCatRepo.find();
@@ -125,7 +132,10 @@ async function bootstrap() {
       const attendanceRows = employees.map((emp) => ({
         date: dateISO as any,
         employeeId: emp.id,
-        status: Math.random() < 0.98 ? AttendanceStatus.PRESENT : AttendanceStatus.ABSENT,
+        status:
+          Math.random() < 0.98
+            ? AttendanceStatus.PRESENT
+            : AttendanceStatus.ABSENT,
       }));
       await attendanceRepo.insert(attendanceRows);
 
@@ -135,39 +145,69 @@ async function bootstrap() {
           expenseCategoryId,
           storeId: highStore.id,
           totalAmount: storeA,
-          createdAt: dateWithRandomTime(dateISO, STORE_OPEN_HOUR, STORE_OPEN_HOUR + 2) as any,
-          updatedAt: dateWithRandomTime(dateISO, STORE_OPEN_HOUR, STORE_OPEN_HOUR + 2) as any,
+          createdAt: dateWithRandomTime(
+            dateISO,
+            STORE_OPEN_HOUR,
+            STORE_OPEN_HOUR + 2,
+          ) as any,
+          updatedAt: dateWithRandomTime(
+            dateISO,
+            STORE_OPEN_HOUR,
+            STORE_OPEN_HOUR + 2,
+          ) as any,
         },
         {
           expenseCategoryId,
           storeId: lowStore.id,
           totalAmount: storeB,
-          createdAt: dateWithRandomTime(dateISO, STORE_OPEN_HOUR, STORE_OPEN_HOUR + 2) as any,
-          updatedAt: dateWithRandomTime(dateISO, STORE_OPEN_HOUR, STORE_OPEN_HOUR + 2) as any,
+          createdAt: dateWithRandomTime(
+            dateISO,
+            STORE_OPEN_HOUR,
+            STORE_OPEN_HOUR + 2,
+          ) as any,
+          updatedAt: dateWithRandomTime(
+            dateISO,
+            STORE_OPEN_HOUR,
+            STORE_OPEN_HOUR + 2,
+          ) as any,
         },
       ]);
 
       // Productions
-      const productionEntities = productionRepo.create(
-        [
-          {
-            date: dateISO as any,
-            storeId: highStore.id,
-            porridgeAmount: highVolume,
-            authorId: authorUser.id,
-            createdAt: dateWithRandomTime(dateISO, STORE_OPEN_HOUR, STORE_OPEN_HOUR + 1) as any,
-            updatedAt: dateWithRandomTime(dateISO, STORE_OPEN_HOUR, STORE_OPEN_HOUR + 1) as any,
-          },
-          {
-            date: dateISO as any,
-            storeId: lowStore.id,
-            porridgeAmount: lowVolume,
-            authorId: authorUser.id,
-            createdAt: dateWithRandomTime(dateISO, STORE_OPEN_HOUR, STORE_OPEN_HOUR + 1) as any,
-            updatedAt: dateWithRandomTime(dateISO, STORE_OPEN_HOUR, STORE_OPEN_HOUR + 1) as any,
-          },
-        ] as Array<Partial<Production>>,
-      ) as Production[];
+      const productionEntities = productionRepo.create([
+        {
+          date: dateISO as any,
+          storeId: highStore.id,
+          porridgeAmount: highVolume,
+          authorId: authorUser.id,
+          createdAt: dateWithRandomTime(
+            dateISO,
+            STORE_OPEN_HOUR,
+            STORE_OPEN_HOUR + 1,
+          ) as any,
+          updatedAt: dateWithRandomTime(
+            dateISO,
+            STORE_OPEN_HOUR,
+            STORE_OPEN_HOUR + 1,
+          ) as any,
+        },
+        {
+          date: dateISO as any,
+          storeId: lowStore.id,
+          porridgeAmount: lowVolume,
+          authorId: authorUser.id,
+          createdAt: dateWithRandomTime(
+            dateISO,
+            STORE_OPEN_HOUR,
+            STORE_OPEN_HOUR + 1,
+          ) as any,
+          updatedAt: dateWithRandomTime(
+            dateISO,
+            STORE_OPEN_HOUR,
+            STORE_OPEN_HOUR + 1,
+          ) as any,
+        },
+      ] as Array<Partial<Production>>);
 
       const productions = await productionRepo.save(productionEntities);
 
@@ -176,7 +216,10 @@ async function bootstrap() {
         const supIds = supplies.slice(0, 3).map((s) => s.id);
         const dist = [0.5, 0.3, 0.2];
 
-        const makeSupplies = (productionId: number, targetCost: number): Array<Partial<ProductionSupply>> =>
+        const makeSupplies = (
+          productionId: number,
+          targetCost: number,
+        ): Array<Partial<ProductionSupply>> =>
           supIds.map((supplyId, idx) => ({
             productionId,
             supplyId,

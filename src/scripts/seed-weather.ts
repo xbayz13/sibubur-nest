@@ -55,15 +55,15 @@ async function bootstrap() {
         ? dateFromForecast
         : new Date(Date.now() + offset * 86400000).toISOString().split('T')[0];
 
-      let existing = await weatherRepo.findOne({
+      const existing = await weatherRepo.findOne({
         where: {
-          date: dateISO as any,
+          date: dateISO,
           locationCode: transformed.location.code,
         },
       });
 
       if (existing) {
-        existing.weatherJson = transformed as any;
+        existing.weatherJson = transformed;
         existing.locationName = transformed.location.city;
         existing.locationCode = transformed.location.code;
         // Preserve existing createdAt; update updatedAt to now
@@ -77,10 +77,10 @@ async function bootstrap() {
         );
         const created = await weatherRepo.save(
           weatherRepo.create({
-            date: dateISO as any,
+            date: dateISO,
             locationName: transformed.location.city,
             locationCode: transformed.location.code,
-            weatherJson: transformed as any,
+            weatherJson: transformed,
             createdAt: createdAt as any,
             updatedAt: createdAt as any,
           }),

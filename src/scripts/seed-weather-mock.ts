@@ -56,10 +56,10 @@ function pickCondition(date: Date): Condition {
   if (rainy) {
     // Base rainy weights (65-70% rain/very cloudy)
     let w = {
-      clear: 0.10,
+      clear: 0.1,
       partly: 0.15,
-      cloudy: 0.10,
-      thick: 0.20,
+      cloudy: 0.1,
+      thick: 0.2,
       rainLight: 0.18,
       rainMed: 0.15,
       rainHeavy: 0.08,
@@ -69,21 +69,21 @@ function pickCondition(date: Date): Condition {
       // More rain Jan-Feb
       w = {
         clear: 0.05,
-        partly: 0.10,
-        cloudy: 0.10,
-        thick: 0.20,
+        partly: 0.1,
+        cloudy: 0.1,
+        thick: 0.2,
         rainLight: 0.22,
         rainMed: 0.18,
-        rainHeavy: 0.10,
+        rainHeavy: 0.1,
         thunder: 0.05,
       };
     }
     return choose(rnd, w);
   } else {
     // Dry season (85-90% clear/partly)
-    let w = {
+    const w = {
       clear: 0.45,
-      partly: 0.40,
+      partly: 0.4,
       cloudy: 0.08,
       thick: 0.02,
       rainLight: 0.02,
@@ -176,7 +176,13 @@ async function bootstrap() {
         .insert()
         .values(batch)
         .orUpdate(
-          ['weather_json', 'location_name', 'location_code', 'created_at', 'updated_at'],
+          [
+            'weather_json',
+            'location_name',
+            'location_code',
+            'created_at',
+            'updated_at',
+          ],
           ['date', 'location_code'],
         )
         .execute();

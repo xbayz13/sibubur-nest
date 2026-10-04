@@ -34,7 +34,13 @@ const GROUP_TABLES: Record<Exclude<CleanGroup, 'all'>, string[]> = {
   // Transactional sales data
   transactions: ['order_item_addons', 'order_items', 'transactions', 'orders'],
   // Operational production data
-  productions: ['expenses', 'production_supplies', 'productions', 'attendances', 'employees'],
+  productions: [
+    'expenses',
+    'production_supplies',
+    'productions',
+    'attendances',
+    'employees',
+  ],
   // Master data (not touched by the new seeders, but kept for full wipe)
   master: [
     'product_addon_products',
@@ -60,7 +66,12 @@ const GROUP_DEPENDENCIES: Record<CleanGroup, CleanGroup[]> = {
   productions: [],
 };
 
-const VALID_GROUPS: CleanGroup[] = ['all', 'master', 'transactions', 'productions'];
+const VALID_GROUPS: CleanGroup[] = [
+  'all',
+  'master',
+  'transactions',
+  'productions',
+];
 
 function resolveGroups(target: CleanGroup): CleanGroup[] {
   const queue: CleanGroup[] = [target];
@@ -84,7 +95,7 @@ function resolveTables(target: CleanGroup): string[] {
   const included = new Set<string>();
 
   for (const group of groups) {
-    const tables = GROUP_TABLES[group as Exclude<CleanGroup, 'all'>] ?? [];
+    const tables = GROUP_TABLES[group] ?? [];
     tables.forEach((table) => included.add(table));
   }
 
