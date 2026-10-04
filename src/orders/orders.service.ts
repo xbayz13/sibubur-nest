@@ -226,11 +226,12 @@ export class OrdersService {
   }
 
   /**
-   * Lists orders optionally filtered by store and date (YYYY-MM-DD), with pagination.
+   * Lists orders optionally filtered by store, date (YYYY-MM-DD) and status, with pagination.
    */
   async findAll(
     storeId?: number,
     date?: string,
+    status?: OrderStatus,
     page?: number,
     limit?: number,
   ): Promise<PaginatedResponse<Order>> {
@@ -243,6 +244,9 @@ export class OrdersService {
       const start = new Date(dateStr + 'T00:00:00.000Z');
       const end = new Date(dateStr + 'T23:59:59.999Z');
       where.createdAt = Between(start, end);
+    }
+    if (status) {
+      where.status = status;
     }
 
     const { take, skip, page: p, limit: l } = getPaginationParams(page, limit);

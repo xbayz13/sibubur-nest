@@ -16,7 +16,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { OrderQueryDto } from './dto/order-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionGuard } from '../common/guards/permission.guard';
 import { RequirePermission } from '../common/decorators/require-permission.decorator';
@@ -58,17 +58,14 @@ export class OrdersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all orders (paginated)' })
-  findAll(
-    @Query('storeId') storeId?: string,
-    @Query('date') date?: string,
-    @Query() pagination?: PaginationQueryDto,
-  ) {
+  @ApiOperation({ summary: 'Get all orders (paginated, filterable)' })
+  findAll(@Query() query: OrderQueryDto) {
     return this.ordersService.findAll(
-      storeId ? +storeId : undefined,
-      date,
-      pagination?.page,
-      pagination?.limit,
+      query.storeId,
+      query.date,
+      query.status,
+      query.page,
+      query.limit,
     );
   }
 

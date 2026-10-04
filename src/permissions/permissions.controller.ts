@@ -13,7 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PermissionsService } from './permissions.service';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { PermissionQueryDto } from './dto/permission-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionGuard } from '../common/guards/permission.guard';
 import { RequirePermission } from '../common/decorators/require-permission.decorator';
@@ -34,14 +34,11 @@ export class PermissionsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all permissions (paginated, or by module)' })
-  findAll(
-    @Query('module') module?: string,
-    @Query() pagination?: PaginationQueryDto,
-  ) {
-    if (module) {
-      return this.permissionsService.findByModule(module);
+  findAll(@Query() query: PermissionQueryDto) {
+    if (query.module) {
+      return this.permissionsService.findByModule(query.module);
     }
-    return this.permissionsService.findAll(pagination?.page, pagination?.limit);
+    return this.permissionsService.findAll(query.page, query.limit);
   }
 
   @Get(':id')

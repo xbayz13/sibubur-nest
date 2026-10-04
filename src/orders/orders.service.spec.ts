@@ -136,6 +136,48 @@ describe('OrdersService', () => {
       expect(result.data).toEqual(mockOrders);
       expect(result.total).toBe(1);
     });
+
+    it('should filter by status if provided', async () => {
+      const mockOrders = [
+        { id: 1, orderNumber: 'ORD-20240101-0001', status: OrderStatus.OPEN },
+      ];
+
+      mockOrderRepository.findAndCount.mockResolvedValue([mockOrders, 1]);
+
+      const result = await service.findAll(
+        undefined,
+        undefined,
+        OrderStatus.OPEN,
+      );
+
+      expect(mockOrderRepository.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ status: OrderStatus.OPEN }),
+        }),
+      );
+      expect(result.data).toEqual(mockOrders);
+      expect(result.total).toBe(1);
+    });
+
+    it('should filter by storeId and status combined', async () => {
+      const mockOrders = [
+        { id: 1, orderNumber: 'ORD-20240101-0001', storeId: 42, status: OrderStatus.OPEN },
+      ];
+
+      mockOrderRepository.findAndCount.mockResolvedValue([mockOrders, 1]);
+
+      const result = await service.findAll(42, undefined, OrderStatus.OPEN);
+
+      expect(mockOrderRepository.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            storeId: 42,
+            status: OrderStatus.OPEN,
+          }),
+        }),
+      );
+      expect(result.total).toBe(1);
+    });
   });
 
   describe('findOne', () => {

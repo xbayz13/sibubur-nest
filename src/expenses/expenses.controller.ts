@@ -13,7 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { ExpenseQueryDto } from './dto/expense-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionGuard } from '../common/guards/permission.guard';
 import { RequirePermission } from '../common/decorators/require-permission.decorator';
@@ -33,17 +33,13 @@ export class ExpensesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all expenses (paginated)' })
-  findAll(
-    @Query('storeId') storeId?: string,
-    @Query('date') date?: string,
-    @Query() pagination?: PaginationQueryDto,
-  ) {
+  @ApiOperation({ summary: 'Get all expenses (paginated, filterable)' })
+  findAll(@Query() query: ExpenseQueryDto) {
     return this.expensesService.findAll(
-      storeId ? +storeId : undefined,
-      date,
-      pagination?.page,
-      pagination?.limit,
+      query.storeId,
+      query.date,
+      query.page,
+      query.limit,
     );
   }
 
