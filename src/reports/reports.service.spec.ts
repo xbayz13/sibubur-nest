@@ -142,8 +142,8 @@ describe('ReportsService', () => {
 
       const result = await service.getProductionRecommendations(targetDate, 1, 30);
 
-      // Fallback: hujan → 0.8
-      expect(result.weatherMultiplier).toBe(0.8);
+      // Fallback: data tidak cukup → netral 1.0
+      expect(result.weatherMultiplier).toBe(1.0);
     });
 
     it('should use fallback when historicalProductions is empty', async () => {
@@ -156,8 +156,8 @@ describe('ReportsService', () => {
 
       const result = await service.getProductionRecommendations(targetDate, 1, 30);
 
-      // Fallback: badai → 0.7
-      expect(result.weatherMultiplier).toBe(0.7);
+      // Fallback: data tidak cukup → netral 1.0
+      expect(result.weatherMultiplier).toBe(1.0);
     });
 
     it('should clamp multiplier to max 1.5', async () => {
@@ -293,87 +293,6 @@ describe('ReportsService', () => {
         r.includes('Cuaca hari ini'),
       );
       expect(weatherMsg).toBeDefined();
-    });
-  });
-
-  describe('getFixedMultiplier (private - tested via behavior)', () => {
-    const targetDate = '2026-09-16';
-
-    const makeProduction = (
-      porridgeAmount: number,
-      weatherCondition: string | null,
-      dateOffset = 0,
-    ): Production => {
-      const date = new Date(targetDate);
-      date.setDate(date.getDate() - Math.abs(dateOffset));
-      return {
-        id: 1,
-        date: date as any,
-        weatherId: weatherCondition ? 1 : null,
-        weather: weatherCondition
-          ? ({ weatherJson: { condition: weatherCondition } } as any)
-          : null,
-        storeId: 1,
-        store: null,
-        porridgeAmount,
-        authorId: 1,
-        author: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-        productionSupplies: [],
-      } as Production;
-    };
-
-    const makeOrder = (quantity: number, dateOffset = 0): Order => {
-      const date = new Date(targetDate);
-      date.setDate(date.getDate() - Math.abs(dateOffset));
-      return {
-        id: 1,
-        createdAt: date,
-        orderItems: [{ quantity } as any],
-        storeId: 1,
-      } as unknown as Order;
-    };
-
-    const testFallback = async (condition: string, expected: number) => {
-      productionRepository.find.mockResolvedValue([]);
-      orderRepository.find.mockResolvedValue([]);
-      weatherRepository.findOne.mockResolvedValue({
-        id: 1,
-        weatherJson: { condition, description: condition },
-      } as any);
-
-      const result = await service.getProductionRecommendations(targetDate, 1, 30);
-      expect(result.weatherMultiplier).toBe(expected);
-    };
-
-    it('should return 0.8 for hujan', async () => {
-      await testFallback('hujan', 0.8);
-    });
-
-    it('should return 0.7 for badai', async () => {
-      await testFallback('badai', 0.7);
-    });
-
-    it('should return 1.0 for cerah', async () => {
-      await testFallback('cerah', 1.0);
-    });
-
-    it('should return 0.9 for mendung', async () => {
-      await testFallback('mendung', 0.9);
-    });
-
-    it('should return 1.0 for unknown condition', async () => {
-      await testFallback('unknown_weather', 1.0);
-    });
-
-    it('should return 0.7 for storm', async () => {
-      await testFallback('storm', 0.7);
-    });
-
-    it('should return 0.9 for cloudy', async () => {
-      await testFallback('cloudy', 0.9);
     });
   });
 });

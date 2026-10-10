@@ -498,11 +498,7 @@ export class ReportsService {
 
         if (overallAvgProduction > 0 && avgProductionForWeather > 0) {
           weatherMultiplier = avgProductionForWeather / overallAvgProduction;
-        } else {
-          weatherMultiplier = this.getFixedMultiplier(targetCondition);
         }
-      } else {
-        weatherMultiplier = this.getFixedMultiplier(targetCondition);
       }
     }
 
@@ -610,36 +606,5 @@ export class ReportsService {
     };
     await this.cacheManager.set(cacheKey, result);
     return result;
-  }
-
-  /**
-   * Fixed multiplier sebagai fallback jika data historis tidak cukup
-   *
-   * @param weatherCondition - Kondisi cuaca (cerah, mendung, hujan, badai)
-   * @returns Fixed multiplier berdasarkan kondisi cuaca
-   */
-  private getFixedMultiplier(weatherCondition: string): number {
-    const conditionLower = weatherCondition.toLowerCase();
-
-    if (conditionLower.includes('rain') || conditionLower.includes('hujan')) {
-      return 0.8; // Hujan: turun
-    } else if (
-      conditionLower.includes('storm') ||
-      conditionLower.includes('badai')
-    ) {
-      return 0.7; // Badai: turun banyak
-    } else if (
-      conditionLower.includes('sunny') ||
-      conditionLower.includes('cerah')
-    ) {
-      return 1.0; // Cerah: normal (baseline)
-    } else if (
-      conditionLower.includes('cloudy') ||
-      conditionLower.includes('mendung')
-    ) {
-      return 0.9; // Mendung: turun sedikit
-    } else {
-      return 1.0; // Default: normal
-    }
   }
 }
