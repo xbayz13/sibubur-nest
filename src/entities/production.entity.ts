@@ -64,6 +64,9 @@ export class Production {
   })
   remainingPortions: number;
 
+  @Column({ name: 'portions_sold', type: 'integer', nullable: true })
+  portionsSold?: number;
+
   @Column({ name: 'author_id' })
   authorId: number;
 

@@ -227,9 +227,14 @@ export class ProductionsService {
         date: updateProductionDto.date ?? production.date,
         storeId: updateProductionDto.storeId ?? production.storeId,
         weatherId: updateProductionDto.weatherId ?? production.weatherId,
+        portionsSold: updateProductionDto.portionsSold ?? production.portionsSold,
         porridgeAmount:
           updateProductionDto.porridgeAmount ?? production.porridgeAmount,
       });
+
+      if (updateProductionDto.portionsSold !== undefined && updateProductionDto.remainingPortions !== undefined) {
+        production.porridgeAmount = updateProductionDto.portionsSold + updateProductionDto.remainingPortions;
+      }
 
       const saved = await queryRunner.manager.save(production);
       await queryRunner.commitTransaction();

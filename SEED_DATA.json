@@ -1,0 +1,604 @@
+{
+  "realData": [
+    {
+      "date": "2026-09-24",
+      "day": "Kamis",
+      "kgBeras": 5,
+      "sisa": 0,
+      "sales": {
+        "buburAyamKomplit": 225,
+        "buburAyamPolos": 50,
+        "esTeh": 28,
+        "esJeruk": 22
+      },
+      "totalRevenue": 2750000,
+      "expenses": [
+        {
+          "item": "Pengeluaran",
+          "amount": 2080000
+        }
+      ]
+    },
+    {
+      "date": "2026-09-25",
+      "day": "Jumat",
+      "kgBeras": 7,
+      "sisa": 0,
+      "sales": {
+        "buburAyamKomplit": 225,
+        "buburAyamPolos": 50,
+        "esTeh": 74,
+        "esJeruk": 55
+      },
+      "totalRevenue": 3145000,
+      "expenses": [
+        {
+          "item": "Minyak 18kg",
+          "amount": 350000
+        },
+        {
+          "item": "Daun bawang 2,5kg",
+          "amount": 30000
+        }
+      ]
+    },
+    {
+      "date": "2026-09-26",
+      "day": "Sabtu",
+      "kgBeras": 10,
+      "sisa": 0,
+      "sales": {
+        "buburAyamKomplit": 288,
+        "buburAyamPolos": 64,
+        "esTeh": 116,
+        "esJeruk": 86
+      },
+      "totalRevenue": 4210000,
+      "expenses": [
+        {
+          "item": "Ayam 53kg",
+          "amount": 216000
+        },
+        {
+          "item": "Beras 25kg",
+          "amount": 385000
+        },
+        {
+          "item": "Bumbu lainnya",
+          "amount": 320000
+        },
+        {
+          "item": "Gas melon 3kg 10pcs",
+          "amount": 210000
+        },
+        {
+          "item": "Krupuk 25kg",
+          "amount": 470000
+        },
+        {
+          "item": "Daun bawang 4kg",
+          "amount": 50000
+        }
+      ]
+    },
+    {
+      "date": "2026-09-27",
+      "day": "Minggu",
+      "kgBeras": 13,
+      "sisa": 0,
+      "sales": {
+        "buburAyamKomplit": 450,
+        "buburAyamPolos": 100,
+        "esTeh": 143,
+        "esJeruk": 107
+      },
+      "totalRevenue": 6250000,
+      "expenses": [
+        {
+          "item": "Cup 500pcs",
+          "amount": 500000
+        },
+        {
+          "item": "Daun bawang 2,5kg",
+          "amount": 20000
+        },
+        {
+          "item": "Jeruk peras 10kg",
+          "amount": 170000
+        }
+      ]
+    },
+    {
+      "date": "2026-09-28",
+      "day": "Senin",
+      "kgBeras": 6,
+      "sisa": 0,
+      "sales": {
+        "buburAyamKomplit": 252,
+        "buburAyamPolos": 56,
+        "esTeh": 91,
+        "esJeruk": 68
+      },
+      "totalRevenue": 3595000,
+      "expenses": [
+        {
+          "item": "Ayam 34kg",
+          "amount": 1460000
+        },
+        {
+          "item": "Cabe rawit 5kg",
+          "amount": 380000
+        },
+        {
+          "item": "Cabe keriting 1kg",
+          "amount": 53000
+        },
+        {
+          "item": "Jeruk peras 15kg",
+          "amount": 225000
+        },
+        {
+          "item": "Daun bawang 2,5kg",
+          "amount": 20000
+        }
+      ]
+    },
+    {
+      "date": "2026-09-29",
+      "day": "Selasa",
+      "kgBeras": 6,
+      "sisa": 50,
+      "sales": {
+        "buburAyamKomplit": 190,
+        "buburAyamPolos": 60,
+        "esTeh": 24,
+        "esJeruk": 18
+      },
+      "totalRevenue": 2410000,
+      "expenses": [
+        {
+          "item": "Beras 2 Karung",
+          "amount": 770000
+        },
+        {
+          "item": "Daun Bawang 1,5 kg",
+          "amount": 20000
+        },
+        {
+          "item": "Gas 8 tabung",
+          "amount": 170000
+        },
+        {
+          "item": "Daun Bawang 1,5 kg",
+          "amount": 20000
+        }
+      ]
+    },
+    {
+      "date": "2026-09-30",
+      "day": "Rabu",
+      "kgBeras": 6,
+      "sisa": 50,
+      "sales": {
+        "buburAyamKomplit": 223,
+        "buburAyamPolos": 54,
+        "esTeh": 41,
+        "esJeruk": 32
+      },
+      "totalRevenue": 2865000,
+      "expenses": [
+        {
+          "item": "Ayam 31 kg",
+          "amount": 1350000
+        },
+        {
+          "item": "Aqua Gelas 5 Dus",
+          "amount": 170000
+        },
+        {
+          "item": "Minyak 18 kg",
+          "amount": 360000
+        },
+        {
+          "item": "Daun Bawang 1,5 kg",
+          "amount": 20000
+        }
+      ]
+    },
+    {
+      "date": "2026-10-01",
+      "day": "Kamis",
+      "kgBeras": 6,
+      "sisa": 30,
+      "sales": {
+        "buburAyamKomplit": 232,
+        "buburAyamPolos": 76,
+        "esTeh": 56,
+        "esJeruk": 45
+      },
+      "totalRevenue": 3205000,
+      "expenses": [
+        {
+          "item": "Gula 15 kg",
+          "amount": 252000
+        },
+        {
+          "item": "Daun Bawang 2 kg",
+          "amount": 25000
+        },
+        {
+          "item": "Kecap asin 1 jerigen",
+          "amount": 90000
+        },
+        {
+          "item": "Kecap asin botol 12 pcs",
+          "amount": 64000
+        },
+        {
+          "item": "Gas 5 tabung",
+          "amount": 105000
+        },
+        {
+          "item": "Merica 0,5 kg",
+          "amount": 25000
+        }
+      ]
+    },
+    {
+      "date": "2026-10-02",
+      "day": "Jumat",
+      "kgBeras": 7,
+      "sisa": 0,
+      "sales": {
+        "buburAyamKomplit": 173,
+        "buburAyamPolos": 54,
+        "esTeh": 77,
+        "esJeruk": 59
+      },
+      "totalRevenue": 2680000,
+      "expenses": [
+        {
+          "item": "Kerupuk 5 karung/sack",
+          "amount": 470000
+        },
+        {
+          "item": "Daun Bawang 2,7 kg",
+          "amount": 35000
+        },
+        {
+          "item": "Ayam 41 kg",
+          "amount": 1720000
+        },
+        {
+          "item": "Cup Plastik + Sendok 500 pcs",
+          "amount": 700000
+        },
+        {
+          "item": "Cabe Rawit 6 kg",
+          "amount": 455000
+        },
+        {
+          "item": "Cabe Keriting 1 kg",
+          "amount": 55000
+        },
+        {
+          "item": "Jeruk 20 kg",
+          "amount": 340000
+        }
+      ]
+    },
+    {
+      "date": "2026-10-03",
+      "day": "Sabtu",
+      "kgBeras": 10,
+      "sisa": 0,
+      "sales": {
+        "buburAyamKomplit": 349,
+        "buburAyamPolos": 62,
+        "esTeh": 111,
+        "esJeruk": 79
+      },
+      "totalRevenue": 4750000,
+      "expenses": [
+        {
+          "item": "Beras 2 karung/sack",
+          "amount": 270000
+        },
+        {
+          "item": "Daun Bawang 3,8 kg",
+          "amount": 50000
+        },
+        {
+          "item": "Terigu 1 karung",
+          "amount": 230000
+        }
+      ]
+    },
+    {
+      "date": "2026-10-04",
+      "day": "Minggu",
+      "kgBeras": 13,
+      "sisa": 40,
+      "sales": {
+        "buburAyamKomplit": 414,
+        "buburAyamPolos": 72,
+        "esTeh": 179,
+        "esJeruk": 118
+      },
+      "totalRevenue": 5985000,
+      "expenses": [
+        {
+          "item": "Ayam 41 kg",
+          "amount": 1700000
+        },
+        {
+          "item": "Daun Bawang 1,5 kg",
+          "amount": 20000
+        },
+        {
+          "item": "Gas 10 tabung",
+          "amount": 210000
+        },
+        {
+          "item": "Bumbu 1 kardus",
+          "amount": 700000
+        }
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "day": "Senin",
+      "kgBeras": 6,
+      "sisa": 0,
+      "sales": {
+        "buburAyamKomplit": 203,
+        "buburAyamPolos": 54,
+        "esTeh": 45,
+        "esJeruk": 35
+      },
+      "totalRevenue": 2700000,
+      "expenses": [
+        {
+          "item": "Minyak 18 kg",
+          "amount": 355000
+        },
+        {
+          "item": "Daun Bawang 1,5 kg",
+          "amount": 20000
+        },
+        {
+          "item": "Garam 1 slop",
+          "amount": 53000
+        },
+        {
+          "item": "Cabe rawit 5 kg",
+          "amount": 380000
+        },
+        {
+          "item": "Jeruk 20 kg",
+          "amount": 340000
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "day": "Selasa",
+      "kgBeras": 6,
+      "sisa": 20,
+      "sales": {
+        "buburAyamKomplit": 190,
+        "buburAyamPolos": 60,
+        "esTeh": 43,
+        "esJeruk": 31
+      },
+      "totalRevenue": 2570000,
+      "expenses": [
+        {
+          "item": "cup plastik 500 pcs",
+          "amount": 500000
+        },
+        {
+          "item": "Daun Bawang 1,5 kg",
+          "amount": 20000
+        },
+        {
+          "item": "Ayam 32 kg",
+          "amount": 1330000
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "day": "Rabu",
+      "kgBeras": 6,
+      "sisa": 50,
+      "sales": {
+        "buburAyamKomplit": 172,
+        "buburAyamPolos": 56,
+        "esTeh": 59,
+        "esJeruk": 45
+      },
+      "totalRevenue": 2520000,
+      "expenses": [
+        {
+          "item": "Beras 2 Karung",
+          "amount": 770000
+        },
+        {
+          "item": "Terigu 1 Karung",
+          "amount": 320000
+        },
+        {
+          "item": "Daun bawang 1,5 kg",
+          "amount": 20000
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "day": "Kamis",
+      "kgBeras": 6,
+      "sisa": 50,
+      "sales": {
+        "buburAyamKomplit": 172,
+        "buburAyamPolos": 56,
+        "esTeh": 46,
+        "esJeruk": 37
+      },
+      "totalRevenue": 2415000,
+      "expenses": [
+        {
+          "item": "Kecap Manis 1 Jerigen",
+          "amount": 550000
+        },
+        {
+          "item": "Gula 15 kg",
+          "amount": 260000
+        },
+        {
+          "item": "Kerupuk 5 karung",
+          "amount": 470000
+        },
+        {
+          "item": "Gas 10 Tabung",
+          "amount": 210000
+        },
+        {
+          "item": "Aqua Gelas 4 Kardus",
+          "amount": 160000
+        },
+        {
+          "item": "Ayam 37 kg",
+          "amount": 1530000
+        },
+        {
+          "item": "Daun bawang 1,5 kg",
+          "amount": 20000
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "day": "Jumat",
+      "kgBeras": 7,
+      "sisa": 0,
+      "sales": {
+        "buburAyamKomplit": 217,
+        "buburAyamPolos": 66,
+        "esTeh": 75,
+        "esJeruk": 56
+      },
+      "totalRevenue": 3155000,
+      "expenses": [
+        {
+          "item": "Minyak 18 kg",
+          "amount": 350000
+        },
+        {
+          "item": "Cabe Rawit 6 kg",
+          "amount": 456000
+        },
+        {
+          "item": "Cabe Keriting 1 kg",
+          "amount": 60000
+        },
+        {
+          "item": "Daun bawang 2,7 kg",
+          "amount": 35000
+        }
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "day": "Sabtu",
+      "kgBeras": 10,
+      "sisa": 0,
+      "sales": {
+        "buburAyamKomplit": 349,
+        "buburAyamPolos": 62,
+        "esTeh": 97,
+        "esJeruk": 66
+      },
+      "totalRevenue": 4615000,
+      "expenses": [
+        {
+          "item": "Beras 2 Karung",
+          "amount": 770000
+        },
+        {
+          "item": "Cup plastik 500 pcs",
+          "amount": 500000
+        },
+        {
+          "item": "Gula 15 kg",
+          "amount": 260000
+        },
+        {
+          "item": "Kecap Asin Jerigen Kecil",
+          "amount": 90000
+        },
+        {
+          "item": "Ayam 47 kg",
+          "amount": 1900000
+        },
+        {
+          "item": "Merica 2 kg",
+          "amount": 100000
+        },
+        {
+          "item": "Daun bawang 3,8 kg",
+          "amount": 50000
+        }
+      ]
+    },
+    {
+      "date": "2026-10-11",
+      "day": "Minggu",
+      "kgBeras": 10,
+      "sisa": 50,
+      "sales": {
+        "buburAyamKomplit": 441,
+        "buburAyamPolos": 78,
+        "esTeh": 128,
+        "esJeruk": 86
+      },
+      "totalRevenue": 5870000,
+      "expenses": [
+        {
+          "item": "Jeruk 11 kg",
+          "amount": 187000
+        },
+        {
+          "item": "Daun bawang 1,2 kg",
+          "amount": 15000
+        }
+      ]
+    }
+  ],
+  "expenseCategories": {
+    "Bahan Baku": [
+      "Ayam",
+      "Beras",
+      "Minyak",
+      "Daun bawang",
+      "Cabe",
+      "Garam",
+      "Bumbu",
+      "Kecap",
+      "Merica",
+      "Gula"
+    ],
+    "Kemasan": [
+      "Cup",
+      "Sendok",
+      "Aqua",
+      "Krupuk"
+    ],
+    "Gas": [
+      "Gas"
+    ],
+    "Operasional": [
+      "Jeruk peras"
+    ]
+  }
+}

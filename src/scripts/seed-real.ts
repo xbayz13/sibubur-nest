@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
+import * as fs from 'fs';
 import { getDatabaseConfig } from '../config/database.config';
 import { Store } from '../entities/store.entity';
 import { User } from '../users/user.entity';
@@ -15,26 +16,8 @@ import { Transaction, TransactionStatus } from '../entities/transaction.entity';
 import { PaymentMethod } from '../entities/payment-method.entity';
 import { Product } from '../entities/product.entity';
 
-const REAL_DATA = [
-  { date: '2026-09-24', day: 'Kamis', kgBeras: 5, sisa: 30 },
-  { date: '2026-09-25', day: 'Jumat', kgBeras: 7, sisa: 0 },
-  { date: '2026-09-26', day: 'Sabtu', kgBeras: 10, sisa: 50 },
-  { date: '2026-09-27', day: 'Minggu', kgBeras: 13, sisa: 0 },
-  { date: '2026-09-28', day: 'Senin', kgBeras: 6, sisa: 0 },
-  { date: '2026-09-29', day: 'Selasa', kgBeras: 6, sisa: 0 },
-  { date: '2026-09-30', day: 'Rabu', kgBeras: 6, sisa: 30 },
-  { date: '2026-10-01', day: 'Kamis', kgBeras: 6, sisa: 0 },
-  { date: '2026-10-02', day: 'Jumat', kgBeras: 6, sisa: 0 },
-  { date: '2026-10-03', day: 'Sabtu', kgBeras: 7, sisa: 0 },
-  { date: '2026-10-04', day: 'Minggu', kgBeras: 10, sisa: 50 },
-  { date: '2026-10-05', day: 'Senin', kgBeras: 13, sisa: 0 },
-  { date: '2026-10-06', day: 'Selasa', kgBeras: 6, sisa: 0 },
-  { date: '2026-10-07', day: 'Rabu', kgBeras: 6, sisa: 0 },
-  { date: '2026-10-08', day: 'Kamis', kgBeras: 6, sisa: 30 },
-  { date: '2026-10-09', day: 'Jumat', kgBeras: 7, sisa: 0 },
-  { date: '2026-10-10', day: 'Sabtu', kgBeras: 10, sisa: 0 },
-  { date: '2026-10-11', day: 'Minggu', kgBeras: 10, sisa: 50 },
-];
+const seedData = JSON.parse(fs.readFileSync('./SEED_DATA.json', 'utf-8'));
+const REAL_DATA = seedData.realData;
 
 const EMPLOYEE_NAMES = [
   'Budi Santoso',
@@ -55,6 +38,31 @@ function generateOrderTime(dateStr: string, baseHour: number): Date {
   const minute = Math.floor(Math.random() * 60);
   date.setHours(hour, minute, Math.floor(Math.random() * 60), 0);
   return date;
+}
+
+function getCategoryForItem(item: string, categories: Map<string, ExpenseCategory>): ExpenseCategory {
+  const itemLower = item.toLowerCase();
+  let category: ExpenseCategory | undefined;
+  if (/ayam|beras|minyak|daun|cabe|bumbu|garam|kecap|merica|gula|terigu|jeruk/.test(itemLower)) {
+    category = categories.get('Bahan Baku');
+  } else if (/cup|sendok|aqua|krupuk|kerupuk/.test(itemLower)) {
+    category = categories.get('Kemasan');
+  } else if (/gas/.test(itemLower)) {
+    category = categories.get('Gas');
+  } else {
+    category = categories.get('Operasional');
+  }
+  if (!category) {
+    throw new Error(`Expense category not found for item: ${item}`);
+  }
+  return category;
+}
+
+interface OrderCounts {
+  buburAyamKomplit: number;
+  buburAyamPolos: number;
+  esTeh: number;
+  esJeruk: number;
 }
 
 async function bootstrap() {
@@ -85,9 +93,7 @@ async function bootstrap() {
     let store = await storeRepo.findOne({ where: { name: 'Lembur Kuring' } });
     if (!store) {
       console.log('Creating store: Lembur Kuring');
-      store = storeRepo.create({
-        name: 'Lembur Kuring',
-      });
+      store = storeRepo.create({ name: 'Lembur Kuring' });
       await storeRepo.save(store);
     }
 
@@ -96,13 +102,10 @@ async function bootstrap() {
       throw new Error('At least one user is required. Run seed:master first.');
     }
 
-    const bahanBakuCategory = await expenseCatRepo.findOne({
-      where: { name: 'Bahan Baku' },
-    });
-    if (!bahanBakuCategory) {
-      throw new Error(
-        'Expense category "Bahan Baku" is required. Run seed:master first.',
-      );
+    const expenseCategories = await expenseCatRepo.find();
+    const categoryMap = new Map(expenseCategories.map((c) => [c.name, c]));
+    if (!categoryMap.get('Bahan Baku')) {
+      throw new Error('Expense categories are required. Run seed:master first.');
     }
 
     const paymentMethods = await paymentMethodRepo.find();
@@ -113,16 +116,15 @@ async function bootstrap() {
     }
 
     const products = await productRepo.find();
-    const buburAyam = products.find((p) => p.name === 'Bubur Ayam');
-    const buburPolos = products.find((p) => p.name === 'Bubur Polos');
-    if (!buburAyam || !buburPolos) {
-      throw new Error('Products Bubur Ayam and Bubur Polos are required.');
+    const buburAyamKomplit = products.find((p) => p.name === 'Bubur Ayam Komplit');
+    const buburAyamPolos = products.find((p) => p.name === 'Bubur Ayam Polos');
+    const esTeh = products.find((p) => p.name === 'Es/Hangat Teh');
+    const esJeruk = products.find((p) => p.name === 'Es/Hangat Jeruk');
+    if (!buburAyamKomplit || !buburAyamPolos || !esTeh || !esJeruk) {
+      throw new Error('Products are required. Run seed:master first.');
     }
 
-    let employees = await employeeRepo.find({
-      where: { storeId: store.id },
-    });
-
+    let employees = await employeeRepo.find({ where: { storeId: store.id } });
     if (employees.length === 0) {
       console.log(`Creating ${EMPLOYEE_NAMES.length} employees...`);
       for (const name of EMPLOYEE_NAMES) {
@@ -142,10 +144,10 @@ async function bootstrap() {
     let orderCounter = 1;
 
     for (const dayData of REAL_DATA) {
-      const { date, day, kgBeras, sisa } = dayData;
+      const { date, day, kgBeras, sisa, sales, totalRevenue, expenses } = dayData;
       console.log(`\n📅 ${date} (${day}) - ${kgBeras} kg, sisa ${sisa} porsi`);
 
-      const portionsSold = kgBeras * 50 - sisa;
+      const portionsSold = sales.buburAyamKomplit + sales.buburAyamPolos;
       const porridgeAmount = portionsSold + sisa;
 
       const production = productionRepo.create({
@@ -172,11 +174,12 @@ async function bootstrap() {
       production.weatherId = weather.id;
       await productionRepo.save(production);
 
-      const numExpenses = Math.random() > 0.5 ? 2 : 1;
-      for (let i = 0; i < numExpenses; i++) {
+      for (const exp of expenses) {
+        const category = getCategoryForItem(exp.item, categoryMap);
         const expense = expenseRepo.create({
-          expenseCategoryId: bahanBakuCategory.id,
-          totalAmount: 50000 + Math.floor(Math.random() * 100000),
+          expenseCategoryId: category.id,
+          description: exp.item,
+          totalAmount: exp.amount,
           storeId: store.id,
           createdAt: generateOrderTime(date, 7),
         });
@@ -188,54 +191,60 @@ async function bootstrap() {
         const attendance = attendanceRepo.create({
           employeeId: emp.id,
           date: date as any,
-          status: isPresent
-            ? AttendanceStatus.PRESENT
-            : AttendanceStatus.ABSENT,
+          status: isPresent ? AttendanceStatus.PRESENT : AttendanceStatus.ABSENT,
         });
         await attendanceRepo.save(attendance);
       }
 
-      const buburAyamQty = Math.ceil(portionsSold * 0.7);
-      const buburPolosQty = portionsSold - buburAyamQty;
+      const totalItems = sales.buburAyamKomplit + sales.buburAyamPolos + sales.esTeh + sales.esJeruk;
+      let itemPool = [
+        ...Array(sales.buburAyamKomplit).fill('buburAyamKomplit'),
+        ...Array(sales.buburAyamPolos).fill('buburAyamPolos'),
+        ...Array(sales.esTeh).fill('esTeh'),
+        ...Array(sales.esJeruk).fill('esJeruk'),
+      ];
 
-      // 1-5 porsi per order (warung: 1 orang beli 1-3 bubur)
-      const numOrders = portionsSold;
-      let remainingAyam = buburAyamQty;
-      let remainingPolos = buburPolosQty;
+      for (let i = itemPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [itemPool[i], itemPool[j]] = [itemPool[j], itemPool[i]];
+      }
 
-      for (let i = 0; i < numOrders; i++) {
-        const hour = 5 + Math.floor((i / numOrders) * 5); // 05:00 - 10:00
-        const minute = Math.floor(Math.random() * 60);
-        const orderTime = new Date(`${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`);
+      let totalOrderRevenue = 0;
+      const orders: OrderCounts[] = [];
 
+      while (itemPool.length > 0) {
+        const itemsInOrder = Math.min(
+          Math.floor(Math.random() * 3) + 1,
+          itemPool.length,
+        );
+        const orderItems = itemPool.splice(0, itemsInOrder);
+
+        const counts: OrderCounts = {
+          buburAyamKomplit: orderItems.filter((i) => i === 'buburAyamKomplit').length,
+          buburAyamPolos: orderItems.filter((i) => i === 'buburAyamPolos').length,
+          esTeh: orderItems.filter((i) => i === 'esTeh').length,
+          esJeruk: orderItems.filter((i) => i === 'esJeruk').length,
+        };
+
+        orders.push(counts);
+      }
+
+      for (let i = 0; i < orders.length; i++) {
+        const counts = orders[i];
         const orderNumber = `ORD-${date.replace(/-/g, '')}-${String(orderCounter).padStart(4, '0')}`;
         orderCounter++;
 
-        // Each customer buys 1 bubur (some buy 2)
-        let orderAyam = 0;
-        let orderPolos = 0;
-        const buyExtra = Math.random() > 0.7; // 30% chance beli 2
-
-        if (remainingAyam > 0) {
-          orderAyam = 1;
-          if (buyExtra && remainingAyam > 1) orderAyam = 2;
-        }
-        if (orderAyam === 0 && remainingPolos > 0) {
-          orderPolos = 1;
-          if (buyExtra && remainingPolos > 1) orderPolos = 2;
-        }
-        if (orderAyam > 0 && remainingPolos > 0 && Math.random() > 0.6) {
-          orderPolos = 1; // kadang beli 1 ayam + 1 polos
-        }
-
-        remainingAyam -= orderAyam;
-        remainingPolos -= orderPolos;
+        const hour = 5 + Math.floor((i / orders.length) * 5);
+        const minute = Math.floor(Math.random() * 60);
+        const orderTime = new Date(`${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`);
 
         const subtotal =
-          orderAyam * Number(buburAyam.price) +
-          orderPolos * Number(buburPolos.price);
-        const tax = subtotal * 0.1;
-        const total = subtotal + tax;
+          counts.buburAyamKomplit * Number(buburAyamKomplit.price) +
+          counts.buburAyamPolos * Number(buburAyamPolos.price) +
+          counts.esTeh * Number(esTeh.price) +
+          counts.esJeruk * Number(esJeruk.price);
+        const tax = 0;
+        const total = subtotal;
 
         const order = orderRepo.create({
           orderNumber,
@@ -250,24 +259,46 @@ async function bootstrap() {
         });
         await orderRepo.save(order);
 
-        if (orderAyam > 0) {
+        if (counts.buburAyamKomplit > 0) {
           const orderItem = orderItemRepo.create({
             orderId: order.id,
-            productId: buburAyam.id,
-            quantity: orderAyam,
-            unitPrice: buburAyam.price,
-            lineTotal: orderAyam * Number(buburAyam.price),
+            productId: buburAyamKomplit.id,
+            quantity: counts.buburAyamKomplit,
+            unitPrice: buburAyamKomplit.price,
+            lineTotal: counts.buburAyamKomplit * Number(buburAyamKomplit.price),
           });
           await orderItemRepo.save(orderItem);
         }
 
-        if (orderPolos > 0) {
+        if (counts.buburAyamPolos > 0) {
           const orderItem = orderItemRepo.create({
             orderId: order.id,
-            productId: buburPolos.id,
-            quantity: orderPolos,
-            unitPrice: buburPolos.price,
-            lineTotal: orderPolos * Number(buburPolos.price),
+            productId: buburAyamPolos.id,
+            quantity: counts.buburAyamPolos,
+            unitPrice: buburAyamPolos.price,
+            lineTotal: counts.buburAyamPolos * Number(buburAyamPolos.price),
+          });
+          await orderItemRepo.save(orderItem);
+        }
+
+        if (counts.esTeh > 0) {
+          const orderItem = orderItemRepo.create({
+            orderId: order.id,
+            productId: esTeh.id,
+            quantity: counts.esTeh,
+            unitPrice: esTeh.price,
+            lineTotal: counts.esTeh * Number(esTeh.price),
+          });
+          await orderItemRepo.save(orderItem);
+        }
+
+        if (counts.esJeruk > 0) {
+          const orderItem = orderItemRepo.create({
+            orderId: order.id,
+            productId: esJeruk.id,
+            quantity: counts.esJeruk,
+            unitPrice: esJeruk.price,
+            lineTotal: counts.esJeruk * Number(esJeruk.price),
           });
           await orderItemRepo.save(orderItem);
         }
@@ -284,15 +315,15 @@ async function bootstrap() {
           createdAt: orderTime,
         });
         await transactionRepo.save(transaction);
+
+        totalOrderRevenue += subtotal;
       }
 
-      console.log(
-        `  ✅ Production: ${kgBeras} kg → ${porridgeAmount} porsi (sold: ${portionsSold}, remaining: ${sisa})`,
-      );
+      console.log(`  ✅ Production: ${kgBeras} kg → ${porridgeAmount} porsi (sold: ${portionsSold}, remaining: ${sisa})`);
       console.log(`  ✅ Weather: Cerah`);
-      console.log(`  ✅ Expenses: ${numExpenses}`);
+      console.log(`  ✅ Expenses: ${expenses.length}`);
       console.log(`  ✅ Attendance: ${employees.length} employees`);
-      console.log(`  ✅ Orders: ${numOrders} (${portionsSold} portions total)`);
+      console.log(`  ✅ Orders: ${orders.length} (Revenue: Rp${totalOrderRevenue.toLocaleString()} / Target: Rp${totalRevenue.toLocaleString()})`);
     }
 
     console.log('\n✅ Real data seeding complete!');

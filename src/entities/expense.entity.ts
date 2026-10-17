@@ -32,6 +32,9 @@ export class Expense {
   @Column({ name: 'total_amount', type: 'decimal', precision: 12, scale: 2 })
   totalAmount: number;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  description?: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

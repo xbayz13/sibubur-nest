@@ -45,6 +45,26 @@ export class CreateProductionDto {
   @Min(0)
   porridgeAmount?: number;
 
+  @ApiProperty({
+    example: 45,
+    description: 'Number of portions sold (calculated as porridgeAmount - remainingPortions)',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  portionsSold?: number;
+
+  @ApiProperty({
+    example: 5,
+    description: 'Number of remaining/unsold portions',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  remainingPortions?: number;
+
   @ApiProperty({ type: [ProductionSupplyDto], required: false })
   @IsOptional()
   @IsArray()

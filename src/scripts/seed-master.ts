@@ -107,30 +107,23 @@ async function seedMaster() {
   // Expense Categories
   await upsertByName(expCatRepo, [
     { name: 'Bahan Baku' },
+    { name: 'Kemasan' },
+    { name: 'Gas' },
     { name: 'Operasional' },
-    { name: 'Transportasi' },
-    { name: 'Lain-lain' },
   ]);
 
   // Stores
   const stores = await upsertByName(storeRepo, [
-    { name: 'Okaz' },
-    { name: 'Pabrik Es' },
+    { name: 'Lembur Kuring' },
   ]);
   const storeMap = new Map(stores.map((s) => [s.name, s]));
 
   // Products (prices in Rupiah)
   const products = await upsertByName(productRepo, [
-    { name: 'Bubur Ayam', price: 10000, description: 'Bubur ayam lengkap' },
-    { name: 'Bubur Polos', price: 8000, description: 'Bubur tanpa topping' },
-    { name: 'Es Jeruk', price: 5000 },
-    { name: 'Es Teh', price: 3000 },
-    { name: 'Jeruk Hangat', price: 5000 },
-    { name: 'Teh Hangat', price: 3000 },
-    { name: 'Aqua Gelas', price: 1000 },
-    { name: 'Kopi', price: 5000 },
-    { name: 'Susu Hangat', price: 5000 },
-    { name: 'Es Susu', price: 5000 },
+    { name: 'Bubur Ayam Komplit', price: 10000, description: 'Bubur ayam lengkap dengan topping' },
+    { name: 'Bubur Ayam Polos', price: 5000, description: 'Bubur tanpa topping' },
+    { name: 'Es/Hangat Teh', price: 5000, description: 'Teh manis dingin atau hangat' },
+    { name: 'Es/Hangat Jeruk', price: 5000, description: 'Jeruk peras dingin atau hangat' },
   ]);
   const productMap = new Map(products.map((p) => [p.name, p]));
 
@@ -143,8 +136,8 @@ async function seedMaster() {
   ]);
   const addonMap = new Map(addons.map((a) => [a.name, a]));
 
-  // Link all addons to both Bubur Ayam and Bubur Polos
-  const productsForAddons = ['Bubur Ayam', 'Bubur Polos'];
+  // Link all addons to both Bubur Ayam Komplit and Bubur Ayam Polos
+  const productsForAddons = ['Bubur Ayam Komplit', 'Bubur Ayam Polos'];
   for (const productName of productsForAddons) {
     const prod: any = productMap.get(productName);
     if (!prod) continue;
@@ -174,31 +167,19 @@ async function seedMaster() {
       username: 'owner',
       name: 'Owner',
       role: 'Owner',
-      store: storeMap.get('Okaz')?.id ?? null,
+      store: storeMap.get('Lembur Kuring')?.id ?? null,
     },
     {
-      username: 'manager_okaz',
-      name: 'Manager Okaz',
+      username: 'manager_lemburkuring',
+      name: 'Manager Lembur Kuring',
       role: 'Manager',
-      store: storeMap.get('Okaz')?.id ?? null,
+      store: storeMap.get('Lembur Kuring')?.id ?? null,
     },
     {
-      username: 'manager_pabrikes',
-      name: 'Manager Pabrik Es',
-      role: 'Manager',
-      store: storeMap.get('Pabrik Es')?.id ?? null,
-    },
-    {
-      username: 'cashier_okaz',
-      name: 'Cashier Okaz',
+      username: 'cashier_lemburkuring',
+      name: 'Cashier Lembur Kuring',
       role: 'Cashier',
-      store: storeMap.get('Okaz')?.id ?? null,
-    },
-    {
-      username: 'cashier_pabrikes',
-      name: 'Cashier Pabrik Es',
-      role: 'Cashier',
-      store: storeMap.get('Pabrik Es')?.id ?? null,
+      store: storeMap.get('Lembur Kuring')?.id ?? null,
     },
   ];
 
@@ -227,7 +208,7 @@ async function seedMaster() {
 
   console.log('\n✅ Master data seeding complete.');
   console.log('Users/password: Pass@word123');
-  console.log('Stores: Okaz, Pabrik Es');
+  console.log('Stores: Lembur Kuring');
   console.log('Products:', Array.from(productMap.keys()).join(', '));
   console.log('Addons:', Array.from(addonMap.keys()).join(', '));
 
