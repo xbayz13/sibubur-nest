@@ -91,7 +91,7 @@ async function bootstrap() {
       await storeRepo.save(store);
     }
 
-    const authorUser = await userRepo.findOne({ order: { id: 'ASC' } });
+    const authorUser = await userRepo.findOne({ where: {}, order: { id: 'ASC' } });
     if (!authorUser) {
       throw new Error('At least one user is required. Run seed:master first.');
     }
