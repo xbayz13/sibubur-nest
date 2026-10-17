@@ -22,6 +22,7 @@
     "seed:master": "ts-node -r dotenv/config src/scripts/seed-master.ts",
     "seed:productions": "ts-node -r dotenv/config src/scripts/seed-productions.ts",
     "seed:transactions": "ts-node -r dotenv/config src/scripts/seed-transactions.ts",
+    "seed:real": "ts-node -r dotenv/config src/scripts/seed-real.ts",
     "seed:weather": "ts-node -r dotenv/config src/scripts/seed-weather.ts",
     "seed:weather:mock": "ts-node -r dotenv/config src/scripts/seed-weather-mock.ts",
     "create-admin": "ts-node -r dotenv/config src/scripts/create-admin-user.ts",

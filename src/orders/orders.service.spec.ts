@@ -161,7 +161,12 @@ describe('OrdersService', () => {
 
     it('should filter by storeId and status combined', async () => {
       const mockOrders = [
-        { id: 1, orderNumber: 'ORD-20240101-0001', storeId: 42, status: OrderStatus.OPEN },
+        {
+          id: 1,
+          orderNumber: 'ORD-20240101-0001',
+          storeId: 42,
+          status: OrderStatus.OPEN,
+        },
       ];
 
       mockOrderRepository.findAndCount.mockResolvedValue([mockOrders, 1]);

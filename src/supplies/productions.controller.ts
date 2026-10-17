@@ -51,7 +51,9 @@ export class ProductionsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all production records (paginated, filterable)' })
+  @ApiOperation({
+    summary: 'Get all production records (paginated, filterable)',
+  })
   findAll(@Query() query: ProductionQueryDto) {
     return this.productionsService.findAll(
       query.storeId,

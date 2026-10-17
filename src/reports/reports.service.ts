@@ -540,17 +540,70 @@ export class ReportsService {
           productionSalesRatios.length
         : 1.5;
 
+    // Calculate avgConversionRatio from historical data
+    const conversionRatios: number[] = [];
+    historicalProductions.forEach((prod) => {
+      const kgBeras = Number(prod.productionKgBeras) || 0;
+      if (kgBeras <= 0) return; // Skip if no kgBeras data
+
+      const prodDate = new Date(prod.date);
+      prodDate.setHours(0, 0, 0, 0);
+      const nextDate = new Date(prodDate);
+      nextDate.setDate(nextDate.getDate() + 1);
+
+      const dayOrders = historicalOrders.filter((order) => {
+        const orderDate = new Date(order.createdAt);
+        return orderDate >= prodDate && orderDate < nextDate;
+      });
+
+      const portionsSold = dayOrders.reduce(
+        (sum, order) =>
+          sum +
+          order.orderItems.reduce(
+            (itemSum, item) => itemSum + item.quantity,
+            0,
+          ),
+        0,
+      );
+
+      const remaining = Number(prod.remainingPortions) || 0;
+      const totalPortions = portionsSold + remaining;
+      const ratio = totalPortions / kgBeras;
+      conversionRatios.push(ratio);
+    });
+
+    const avgConversionRatio =
+      conversionRatios.length > 0
+        ? conversionRatios.reduce((a, b) => a + b, 0) / conversionRatios.length
+        : 50; // Default fallback
+
+    const actualLookbackDays = conversionRatios.length;
+
     const baseRecommendation = avgSalesForDayOfWeek * avgRatio;
     const weatherAdjustedRecommendation =
       baseRecommendation * weatherMultiplier;
 
     const recommendedAmount = Math.ceil(weatherAdjustedRecommendation * 1.1);
 
+    // Calculate recommendedKgBeras
+    const recommendedKgBeras =
+      avgConversionRatio > 0
+        ? Math.round((recommendedAmount / avgConversionRatio) * 10) / 10
+        : 0;
+
+    const hasEnoughData = actualLookbackDays >= 3;
+
     const recommendations: string[] = [];
+
+    if (!hasEnoughData) {
+      recommendations.push(
+        `Belum cukup data historis (minimal 3 hari, baru ada ${actualLookbackDays} hari). Rekomendasi mungkin kurang akurat.`,
+      );
+    }
 
     if (avgSalesForDayOfWeek > 0) {
       recommendations.push(
-        `Berdasarkan data ${lookbackDays} hari terakhir, rata-rata penjualan untuk hari ini adalah ${avgSalesForDayOfWeek.toFixed(1)} porsi.`,
+        `Berdasarkan data ${actualLookbackDays} hari terakhir, rata-rata penjualan untuk hari ini adalah ${avgSalesForDayOfWeek.toFixed(1)} porsi.`,
       );
     } else {
       recommendations.push(
@@ -587,14 +640,20 @@ export class ReportsService {
     }
 
     recommendations.push(
-      `Rekomendasi jumlah produksi: ${recommendedAmount} porsi.`,
+      `Rekomendasi jumlah produksi: ${recommendedAmount} porsi (≈ ${recommendedKgBeras} kg beras).`,
     );
 
     const result = {
       recommendedAmount,
+      recommendedKgBeras: hasEnoughData ? recommendedKgBeras : 0,
+      avgConversionRatio: hasEnoughData
+        ? Math.round(avgConversionRatio * 10) / 10
+        : 50,
+      actualLookbackDays,
       baseRecommendation: Math.ceil(baseRecommendation),
       weatherMultiplier,
       avgSalesForDayOfWeek: avgSalesForDayOfWeek.toFixed(1),
+      avgRatio: Math.round(avgRatio * 100) / 100,
       targetDayOfWeek,
       targetWeather,
       recommendations,
@@ -602,6 +661,7 @@ export class ReportsService {
         productionCount: historicalProductions.length,
         orderCount: historicalOrders.length,
         lookbackDays,
+        conversionDataDays: actualLookbackDays,
       },
     };
     await this.cacheManager.set(cacheKey, result);

@@ -45,6 +45,25 @@ export class Production {
   })
   porridgeAmount: number;
 
+  @Column({
+    name: 'production_kg_beras',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  productionKgBeras: number;
+
+  @Column({
+    name: 'remaining_portions',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    default: 0,
+  })
+  remainingPortions: number;
+
   @Column({ name: 'author_id' })
   authorId: number;
 

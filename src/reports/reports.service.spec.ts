@@ -42,11 +42,26 @@ describe('ReportsService', () => {
       providers: [
         ReportsService,
         { provide: getRepositoryToken(Order), useValue: mockOrderRepository },
-        { provide: getRepositoryToken(Transaction), useValue: mockTransactionRepository },
-        { provide: getRepositoryToken(Production), useValue: mockProductionRepository },
-        { provide: getRepositoryToken(Expense), useValue: mockExpenseRepository },
-        { provide: getRepositoryToken(Attendance), useValue: mockAttendanceRepository },
-        { provide: getRepositoryToken(Weather), useValue: mockWeatherRepository },
+        {
+          provide: getRepositoryToken(Transaction),
+          useValue: mockTransactionRepository,
+        },
+        {
+          provide: getRepositoryToken(Production),
+          useValue: mockProductionRepository,
+        },
+        {
+          provide: getRepositoryToken(Expense),
+          useValue: mockExpenseRepository,
+        },
+        {
+          provide: getRepositoryToken(Attendance),
+          useValue: mockAttendanceRepository,
+        },
+        {
+          provide: getRepositoryToken(Weather),
+          useValue: mockWeatherRepository,
+        },
         { provide: CACHE_MANAGER, useValue: mockCacheManager },
       ],
     }).compile();
@@ -118,7 +133,11 @@ describe('ReportsService', () => {
         weatherJson: { condition: 'hujan', description: 'Hujan ringan' },
       } as any);
 
-      const result = await service.getProductionRecommendations(targetDate, 1, 30);
+      const result = await service.getProductionRecommendations(
+        targetDate,
+        1,
+        30,
+      );
 
       expect(result.weatherMultiplier).toBe(1.0);
       expect(result.recommendedAmount).toBeGreaterThan(0);
@@ -140,7 +159,11 @@ describe('ReportsService', () => {
         weatherJson: { condition: 'hujan', description: 'Hujan' },
       } as any);
 
-      const result = await service.getProductionRecommendations(targetDate, 1, 30);
+      const result = await service.getProductionRecommendations(
+        targetDate,
+        1,
+        30,
+      );
 
       // Fallback: data tidak cukup → netral 1.0
       expect(result.weatherMultiplier).toBe(1.0);
@@ -154,7 +177,11 @@ describe('ReportsService', () => {
         weatherJson: { condition: 'badai', description: 'Badai' },
       } as any);
 
-      const result = await service.getProductionRecommendations(targetDate, 1, 30);
+      const result = await service.getProductionRecommendations(
+        targetDate,
+        1,
+        30,
+      );
 
       // Fallback: data tidak cukup → netral 1.0
       expect(result.weatherMultiplier).toBe(1.0);
@@ -181,7 +208,11 @@ describe('ReportsService', () => {
         weatherJson: { condition: 'cerah', description: 'Cerah' },
       } as any);
 
-      const result = await service.getProductionRecommendations(targetDate, 1, 30);
+      const result = await service.getProductionRecommendations(
+        targetDate,
+        1,
+        30,
+      );
 
       expect(result.weatherMultiplier).toBeLessThanOrEqual(1.5);
     });
@@ -207,7 +238,11 @@ describe('ReportsService', () => {
         weatherJson: { condition: 'hujan', description: 'Hujan' },
       } as any);
 
-      const result = await service.getProductionRecommendations(targetDate, 1, 30);
+      const result = await service.getProductionRecommendations(
+        targetDate,
+        1,
+        30,
+      );
 
       expect(result.weatherMultiplier).toBeGreaterThanOrEqual(0.5);
     });
@@ -217,7 +252,11 @@ describe('ReportsService', () => {
       orderRepository.find.mockResolvedValue([]);
       weatherRepository.findOne.mockResolvedValue(null);
 
-      const result = await service.getProductionRecommendations(targetDate, 1, 30);
+      const result = await service.getProductionRecommendations(
+        targetDate,
+        1,
+        30,
+      );
 
       expect(result.weatherMultiplier).toBe(1.0);
     });
@@ -240,7 +279,11 @@ describe('ReportsService', () => {
         weatherJson: { condition: 'hujan', description: 'Hujan' },
       } as any);
 
-      const result = await service.getProductionRecommendations(targetDate, 1, 30);
+      const result = await service.getProductionRecommendations(
+        targetDate,
+        1,
+        30,
+      );
 
       // Semua production match → data-driven multiplier
       expect(result.weatherMultiplier).not.toBe(0.8); // bukan fallback
@@ -264,7 +307,11 @@ describe('ReportsService', () => {
         weatherJson: { condition: 'cerah', description: 'Cerah' },
       } as any);
 
-      const result = await service.getProductionRecommendations(targetDate, 1, 30);
+      const result = await service.getProductionRecommendations(
+        targetDate,
+        1,
+        30,
+      );
 
       // Hanya 'cerah' yang match → avgProduction = 60
       // Overall avg = (60+40)/2 = 50
@@ -287,7 +334,11 @@ describe('ReportsService', () => {
         weatherJson: { condition: 'cerah', description: 'Cerah' },
       } as any);
 
-      const result = await service.getProductionRecommendations(targetDate, 1, 30);
+      const result = await service.getProductionRecommendations(
+        targetDate,
+        1,
+        30,
+      );
 
       const weatherMsg = result.recommendations.find((r: string) =>
         r.includes('Cuaca hari ini'),
