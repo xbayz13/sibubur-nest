@@ -198,39 +198,34 @@ async function bootstrap() {
       const buburAyamQty = Math.ceil(portionsSold * 0.7);
       const buburPolosQty = portionsSold - buburAyamQty;
 
-      const numOrders = Math.ceil(portionsSold / 3);
-
+      // 1-5 porsi per order (warung: 1 orang beli 1-3 bubur)
+      const numOrders = portionsSold;
       let remainingAyam = buburAyamQty;
       let remainingPolos = buburPolosQty;
 
       for (let i = 0; i < numOrders; i++) {
-        const orderTime = generateOrderTime(date, 8 + Math.floor(i / 3));
+        const hour = 5 + Math.floor((i / numOrders) * 5); // 05:00 - 10:00
+        const minute = Math.floor(Math.random() * 60);
+        const orderTime = new Date(`${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`);
 
         const orderNumber = `ORD-${date.replace(/-/g, '')}-${String(orderCounter).padStart(4, '0')}`;
         orderCounter++;
 
+        // Each customer buys 1 bubur (some buy 2)
         let orderAyam = 0;
         let orderPolos = 0;
+        const buyExtra = Math.random() > 0.7; // 30% chance beli 2
 
-        if (i === numOrders - 1) {
-          orderAyam = remainingAyam;
-          orderPolos = remainingPolos;
-        } else {
-          const avgPerOrder = Math.ceil(portionsSold / numOrders);
-          orderAyam = Math.min(
-            remainingAyam,
-            Math.max(
-              1,
-              Math.floor(avgPerOrder * 0.7 + (Math.random() - 0.5) * 2),
-            ),
-          );
-          orderPolos = Math.min(
-            remainingPolos,
-            Math.max(
-              0,
-              Math.floor(avgPerOrder * 0.3 + (Math.random() - 0.5) * 2),
-            ),
-          );
+        if (remainingAyam > 0) {
+          orderAyam = 1;
+          if (buyExtra && remainingAyam > 1) orderAyam = 2;
+        }
+        if (orderAyam === 0 && remainingPolos > 0) {
+          orderPolos = 1;
+          if (buyExtra && remainingPolos > 1) orderPolos = 2;
+        }
+        if (orderAyam > 0 && remainingPolos > 0 && Math.random() > 0.6) {
+          orderPolos = 1; // kadang beli 1 ayam + 1 polos
         }
 
         remainingAyam -= orderAyam;

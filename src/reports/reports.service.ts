@@ -429,18 +429,27 @@ export class ReportsService {
         }),
       ]);
 
-    const salesByDayOfWeek: { [key: number]: number[] } = {};
+    // Group sales by day, then by day-of-week
+    const salesByDay: { [key: string]: number } = {};
     historicalOrders.forEach((order) => {
       const orderDate = new Date(order.createdAt);
-      const dayOfWeek = orderDate.getDay();
+      const dateKey = orderDate.toISOString().split('T')[0];
       const totalItems = order.orderItems.reduce(
         (sum, item) => sum + item.quantity,
         0,
       );
+      salesByDay[dateKey] = (salesByDay[dateKey] || 0) + totalItems;
+    });
+
+    // Now aggregate by day-of-week
+    const salesByDayOfWeek: { [key: number]: number[] } = {};
+    Object.entries(salesByDay).forEach(([dateStr, totalSales]) => {
+      const date = new Date(dateStr);
+      const dayOfWeek = date.getDay();
       if (!salesByDayOfWeek[dayOfWeek]) {
         salesByDayOfWeek[dayOfWeek] = [];
       }
-      salesByDayOfWeek[dayOfWeek].push(totalItems);
+      salesByDayOfWeek[dayOfWeek].push(totalSales);
     });
 
     const targetDaySales = salesByDayOfWeek[targetDayOfWeek] || [];
